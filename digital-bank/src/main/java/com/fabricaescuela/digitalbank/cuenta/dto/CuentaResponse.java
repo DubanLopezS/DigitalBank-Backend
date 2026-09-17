@@ -21,12 +21,12 @@ public record CuentaResponse(
     public static CuentaResponse from(Cuenta cuenta) {
         return new CuentaResponse(
                 cuenta.getId(),
-                cuenta.getCliente().getId(),
+                cuenta.getClienteId(),
                 cuenta.getNumeroCuenta(),
                 cuenta.getTipoCuenta(),
                 cuenta.getSaldoContable(),
                 cuenta.getRetencion(),
-                cuenta.getSaldoDisponible(),
+                cuenta.getSaldoContable().subtract(cuenta.getRetencion()),
                 cuenta.getEstado().name(),
                 cuenta.getFechaApertura()
         );

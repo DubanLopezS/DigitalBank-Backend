@@ -1,6 +1,5 @@
 package com.fabricaescuela.digitalbank.cuenta.entity;
 
-import com.fabricaescuela.digitalbank.cliente.entity.Cliente;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -15,9 +14,8 @@ public class Cuenta {
     @GeneratedValue
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "cliente_id", nullable = false)
-    private Cliente cliente;
+    @Column(name = "cliente_id", nullable = false)
+    private UUID clienteId;
 
     @Column(name = "numero_cuenta", nullable = false, length = 10)
     private String numeroCuenta;
@@ -27,7 +25,7 @@ public class Cuenta {
     private TipoCuenta tipoCuenta;
 
     @Column(name = "saldo_contable", nullable = false)
-    private BigDecimal saldoContable;
+    private BigDecimal saldoContable = BigDecimal.ZERO;
 
     @Column(nullable = false)
     private BigDecimal retencion = BigDecimal.ZERO;
@@ -41,23 +39,23 @@ public class Cuenta {
 
     protected Cuenta() {}
 
-    public Cuenta(Cliente cliente, String numeroCuenta, TipoCuenta tipoCuenta, BigDecimal saldoInicial) {
-        this.cliente = cliente;
+    public Cuenta(UUID clienteId, String numeroCuenta, TipoCuenta tipoCuenta) {
+        this.clienteId = clienteId;
         this.numeroCuenta = numeroCuenta;
         this.tipoCuenta = tipoCuenta;
-        this.saldoContable = saldoInicial;
+    }
+
+    public Cuenta(UUID clienteId, String numeroCuenta, TipoCuenta tipoCuenta, BigDecimal saldoApertura) {
+        this(clienteId, numeroCuenta, tipoCuenta);
+        this.saldoContable = saldoApertura;
     }
 
     public UUID getId() { return id; }
-    public Cliente getCliente() { return cliente; }
+    public UUID getClienteId() { return clienteId; }
     public String getNumeroCuenta() { return numeroCuenta; }
     public TipoCuenta getTipoCuenta() { return tipoCuenta; }
     public BigDecimal getSaldoContable() { return saldoContable; }
     public BigDecimal getRetencion() { return retencion; }
     public EstadoCuenta getEstado() { return estado; }
     public LocalDateTime getFechaApertura() { return fechaApertura; }
-
-    public BigDecimal getSaldoDisponible() {
-        return saldoContable.subtract(retencion);
-    }
 }

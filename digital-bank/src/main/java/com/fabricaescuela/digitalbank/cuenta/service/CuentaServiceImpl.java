@@ -47,7 +47,7 @@ public class CuentaServiceImpl implements CuentaService {
                 .setScale(2, RoundingMode.HALF_UP);
 
         Cuenta cuenta = new Cuenta(
-                cliente,
+                cliente.getId(),
                 generadorNumeroCuenta.generar(),
                 request.tipoCuenta(),
                 saldoInicial
