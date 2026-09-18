@@ -50,6 +50,16 @@ public class Cuenta {
         this.saldoContable = saldoApertura;
     }
 
+    // Comportamiento de negocio
+
+    public boolean estaCerrada() {
+        return estado == EstadoCuenta.CERRADA;
+    }
+
+    public void acreditar(BigDecimal monto) {
+        this.saldoContable = this.saldoContable.add(monto);
+    }
+
     public UUID getId() { return id; }
     public UUID getClienteId() { return clienteId; }
     public String getNumeroCuenta() { return numeroCuenta; }
