@@ -45,6 +45,11 @@ public class Cuenta {
         this.tipoCuenta = tipoCuenta;
     }
 
+    public Cuenta(UUID clienteId, String numeroCuenta, TipoCuenta tipoCuenta, BigDecimal saldoApertura) {
+        this(clienteId, numeroCuenta, tipoCuenta);
+        this.saldoContable = saldoApertura;
+    }
+
     public UUID getId() { return id; }
     public UUID getClienteId() { return clienteId; }
     public String getNumeroCuenta() { return numeroCuenta; }

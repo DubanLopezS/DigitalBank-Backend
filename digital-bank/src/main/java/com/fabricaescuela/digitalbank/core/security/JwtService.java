@@ -31,10 +31,16 @@ public class JwtService {
         Date ahora = new Date();
         Date expiracion = new Date(ahora.getTime() + minutosAMs(expirationMinutes));
 
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(usuario.getId().toString())
                 .claim("email", usuario.getEmail())
-                .claim("rol", usuario.getRol().name())
+                .claim("rol", usuario.getRol().name());
+
+        if (usuario.getClienteId() != null) {
+            builder.claim("clienteId", usuario.getClienteId().toString());
+        }
+
+        return builder
                 .issuedAt(ahora)
                 .expiration(expiracion)
                 .signWith(key)
@@ -48,7 +54,7 @@ public class JwtService {
     private long minutosAMs(long minutos) {
         return minutos * 60 * 1000;
     }
-    
+
     public Claims parseToken(String token) {
     return Jwts.parser()
             .verifyWith(key)
@@ -72,5 +78,10 @@ public class JwtService {
 
     public String extraerRol(String token) {
         return parseToken(token).get("rol", String.class);
+    }
+
+    public UUID extraerClienteId(String token) {
+        String clienteId = parseToken(token).get("clienteId", String.class);
+        return clienteId != null ? UUID.fromString(clienteId) : null;
     }
 }
