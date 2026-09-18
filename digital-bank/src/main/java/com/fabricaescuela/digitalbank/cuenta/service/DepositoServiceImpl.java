@@ -31,7 +31,7 @@ public class DepositoServiceImpl implements DepositoService {
     @Transactional
     public TransaccionResponse registrarDeposito(UUID cuentaId, DepositoRequest request) {
         Cuenta cuenta = cuentaRepository.findById(cuentaId)
-                .orElseThrow(() -> new CuentaNoEncontradaException("Cuenta no encontrada"));
+                .orElseThrow(CuentaNoEncontradaException::new);
 
         validarCuentaDisponible(cuenta);
 

@@ -1,6 +1,7 @@
 package com.fabricaescuela.digitalbank.cuenta.entity;
 
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -16,7 +17,7 @@ public class Cuenta {
     @Column(name = "cliente_id", nullable = false)
     private UUID clienteId;
 
-    @Column(name = "numero_cuenta", nullable = false)
+    @Column(name = "numero_cuenta", nullable = false, length = 10)
     private String numeroCuenta;
 
     @Enumerated(EnumType.STRING)
