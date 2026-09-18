@@ -6,6 +6,7 @@ import com.fabricaescuela.digitalbank.cliente.repository.ClienteRepository;
 import com.fabricaescuela.digitalbank.cuenta.dto.AperturaCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
+import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoEncontradoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoHabilitadoException;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.CuentaService;
@@ -15,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Objects;
+import java.util.UUID;
 
 @Service
 public class CuentaServiceImpl implements CuentaService {
@@ -33,11 +36,15 @@ public class CuentaServiceImpl implements CuentaService {
 
     @Override
     @Transactional
-    public CuentaResponse abrirCuenta(AperturaCuentaRequest request) {
+    public CuentaResponse abrirCuenta(AperturaCuentaRequest request, UUID clienteIdAutenticado) {
 
         Cliente cliente = clienteRepository
                 .findByTipoDocumentoAndNumeroDocumento(request.tipoDocumento(), request.numeroDocumento().trim())
                 .orElseThrow(() -> new ClienteNoEncontradoException("Cliente no encontrado"));
+
+        if (!Objects.equals(clienteIdAutenticado, cliente.getId())) {
+            throw new ClienteNoAutorizadoException();
+        }
 
         if (cliente.getEstado() != EstadoCliente.ACTIVO) {
             throw new ClienteNoHabilitadoException("Cliente no habilitado");

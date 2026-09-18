@@ -8,6 +8,7 @@ import com.fabricaescuela.digitalbank.cuenta.dto.AperturaCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
 import com.fabricaescuela.digitalbank.cuenta.entity.TipoCuenta;
+import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoEncontradoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoHabilitadoException;
 import com.fabricaescuela.digitalbank.cuenta.repository.CuentaRepository;
@@ -31,6 +32,8 @@ import static org.mockito.Mockito.*;
 class CuentaServiceImplTest {
 
     private static final String DOCUMENTO = "1020304050";
+    private static final UUID CLIENTE_ID = UUID.randomUUID();
+    private static final UUID OTRO_CLIENTE_ID = UUID.randomUUID();
 
     @Mock
     private CuentaRepository cuentaRepository;
@@ -45,16 +48,34 @@ class CuentaServiceImplTest {
     private CuentaServiceImpl cuentaService;
 
     @Test
+    @DisplayName("Un cliente no puede abrir cuenta a nombre de otro, responde 403")
+    void noSePuedeAbrirCuentaANombreDeOtroCliente() {
+        Cliente cliente = mock(Cliente.class);
+        when(cliente.getId()).thenReturn(CLIENTE_ID);
+        when(clienteRepository.findByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO))
+                .thenReturn(Optional.of(cliente));
+
+        ClienteNoAutorizadoException ex = assertThrows(
+                ClienteNoAutorizadoException.class,
+                () -> cuentaService.abrirCuenta(request(BigDecimal.valueOf(50000)), OTRO_CLIENTE_ID)
+        );
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        verify(cuentaRepository, never()).save(any());
+    }
+
+    @Test
     @DisplayName("AC-2: cliente INACTIVO no puede abrir cuenta, responde 403 'Cliente no habilitado'")
     void clienteInactivoNoPuedeAbrirCuenta() {
         Cliente cliente = mock(Cliente.class);
+        when(cliente.getId()).thenReturn(CLIENTE_ID);
         when(cliente.getEstado()).thenReturn(EstadoCliente.INACTIVO);
         when(clienteRepository.findByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO))
                 .thenReturn(Optional.of(cliente));
 
         ClienteNoHabilitadoException ex = assertThrows(
                 ClienteNoHabilitadoException.class,
-                () -> cuentaService.abrirCuenta(request(BigDecimal.valueOf(50000)))
+                () -> cuentaService.abrirCuenta(request(BigDecimal.valueOf(50000)), CLIENTE_ID)
         );
 
         assertEquals("Cliente no habilitado", ex.getMessage());
@@ -70,7 +91,7 @@ class CuentaServiceImplTest {
 
         ClienteNoEncontradoException ex = assertThrows(
                 ClienteNoEncontradoException.class,
-                () -> cuentaService.abrirCuenta(request(null))
+                () -> cuentaService.abrirCuenta(request(null), CLIENTE_ID)
         );
 
         assertEquals("Cliente no encontrado", ex.getMessage());
@@ -83,7 +104,7 @@ class CuentaServiceImplTest {
     void sinMontoLaCuentaIniciaEnCero() {
         prepararClienteActivo();
 
-        CuentaResponse response = cuentaService.abrirCuenta(request(null));
+        CuentaResponse response = cuentaService.abrirCuenta(request(null), CLIENTE_ID);
 
         assertEquals(0, response.saldoContable().compareTo(BigDecimal.ZERO));
         assertEquals(0, response.saldoDisponible().compareTo(BigDecimal.ZERO));
@@ -94,7 +115,7 @@ class CuentaServiceImplTest {
     void cuentaSeCreaActivaConNumeroDeDiezDigitos() {
         prepararClienteActivo();
 
-        CuentaResponse response = cuentaService.abrirCuenta(request(BigDecimal.valueOf(150000)));
+        CuentaResponse response = cuentaService.abrirCuenta(request(BigDecimal.valueOf(150000)), CLIENTE_ID);
 
         assertEquals("ACTIVA", response.estado());
         assertEquals(10, response.numeroCuenta().length());
@@ -107,7 +128,7 @@ class CuentaServiceImplTest {
     private void prepararClienteActivo() {
         Cliente cliente = mock(Cliente.class);
         when(cliente.getEstado()).thenReturn(EstadoCliente.ACTIVO);
-        when(cliente.getId()).thenReturn(UUID.randomUUID());
+        when(cliente.getId()).thenReturn(CLIENTE_ID);
         when(clienteRepository.findByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO))
                 .thenReturn(Optional.of(cliente));
         when(generadorNumeroCuenta.generar()).thenReturn("1234567890");
