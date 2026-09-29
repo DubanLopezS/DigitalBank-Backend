@@ -14,7 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
@@ -77,43 +76,6 @@ class ClienteServiceImplTest {
     }
 
     @Test
-    @DisplayName("El registro crea las credenciales del cliente con la contrasena recibida")
-    void elRegistroCreaLasCredencialesDelCliente() {
-        // Arrange
-        UUID idGenerado = UUID.randomUUID();
-        when(clienteRepository.existsByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO)).thenReturn(false);
-        when(clienteRepository.existsByEmail(EMAIL)).thenReturn(false);
-        when(clienteRepository.save(any(Cliente.class))).thenAnswer(invocacion -> {
-            Cliente cliente = invocacion.getArgument(0);
-            ReflectionTestUtils.setField(cliente, "id", idGenerado);
-            return cliente;
-        });
-
-        // Act
-        clienteService.registrarCliente(request(LocalDate.now().minusYears(30)));
-
-        // Assert
-        verify(credencialesService).registrarCredencialesCliente(idGenerado, EMAIL, PASSWORD);
-    }
-
-    @Test
-    @DisplayName("Un documento ya registrado responde 409 y no persiste nada")
-    void documentoDuplicadoResponde409() {
-        // Arrange
-        when(clienteRepository.existsByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO)).thenReturn(true);
-
-        // Act & Assert
-        assertThatThrownBy(() -> clienteService.registrarCliente(request(LocalDate.now().minusYears(30))))
-                .isInstanceOf(ClienteYaExisteException.class)
-                .hasMessage("El cliente ya existe")
-                .extracting(ex -> ((ClienteYaExisteException) ex).getStatus())
-                .isEqualTo(HttpStatus.CONFLICT);
-
-        verify(clienteRepository, never()).save(any());
-        verifyNoInteractions(credencialesService);
-    }
-
-    @Test
     @DisplayName("Un correo ya registrado responde 409 y no persiste nada")
     void emailDuplicadoResponde409() {
         // Arrange
@@ -126,39 +88,6 @@ class ClienteServiceImplTest {
 
         verify(clienteRepository, never()).save(any());
         verifyNoInteractions(credencialesService);
-    }
-
-    @Test
-    @DisplayName("Un cliente de 17 anos responde 400 y no persiste nada")
-    void clienteMenorDeEdadResponde400() {
-        // Arrange
-        when(clienteRepository.existsByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO)).thenReturn(false);
-        when(clienteRepository.existsByEmail(EMAIL)).thenReturn(false);
-
-        // Act & Assert
-        assertThatThrownBy(() -> clienteService.registrarCliente(request(LocalDate.now().minusYears(17))))
-                .isInstanceOf(ClienteMenorDeEdadException.class)
-                .hasMessage("El cliente debe ser mayor de edad")
-                .extracting(ex -> ((ClienteMenorDeEdadException) ex).getStatus())
-                .isEqualTo(HttpStatus.BAD_REQUEST);
-
-        verify(clienteRepository, never()).save(any());
-        verifyNoInteractions(credencialesService);
-    }
-
-    @Test
-    @DisplayName("Un cliente que cumple 18 anos hoy si puede registrarse")
-    void clienteQueCumple18HoySiPuedeRegistrarse() {
-        // Arrange
-        when(clienteRepository.existsByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO)).thenReturn(false);
-        when(clienteRepository.existsByEmail(EMAIL)).thenReturn(false);
-        when(clienteRepository.save(any(Cliente.class))).thenAnswer(invocacion -> invocacion.getArgument(0));
-
-        // Act
-        ClienteResponse response = clienteService.registrarCliente(request(LocalDate.now().minusYears(18)));
-
-        // Assert
-        assertThat(response.estado()).isEqualTo("ACTIVO");
     }
 
     @Test

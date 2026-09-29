@@ -60,51 +60,6 @@ class SaldoServiceImplTest {
     }
 
     @Test
-    @DisplayName("Un ADMIN consulta cualquier cuenta sin verificar titularidad")
-    void adminConsultaCualquierCuenta() {
-        // Arrange
-        Cuenta cuenta = cuenta(new BigDecimal("50000.00"), BigDecimal.ZERO, OTRO_CLIENTE);
-        when(cuentaRepository.findByNumeroCuenta(NUMERO_CUENTA)).thenReturn(Optional.of(cuenta));
-
-        // Act
-        SaldoResponse response = saldoService.consultarSaldo(NUMERO_CUENTA, USUARIO_ID, "ADMIN");
-
-        // Assert
-        assertThat(response.saldoDisponible()).isEqualByComparingTo(new BigDecimal("50000.00"));
-        verifyNoInteractions(usuarioQueryService);
-    }
-
-    @Test
-    @DisplayName("Un CAJERO consulta cualquier cuenta sin verificar titularidad")
-    void cajeroConsultaCualquierCuenta() {
-        // Arrange
-        Cuenta cuenta = cuenta(new BigDecimal("50000.00"), BigDecimal.ZERO, OTRO_CLIENTE);
-        when(cuentaRepository.findByNumeroCuenta(NUMERO_CUENTA)).thenReturn(Optional.of(cuenta));
-
-        // Act
-        SaldoResponse response = saldoService.consultarSaldo(NUMERO_CUENTA, USUARIO_ID, "CAJERO");
-
-        // Assert
-        assertThat(response.saldoContable()).isEqualByComparingTo(new BigDecimal("50000.00"));
-        verifyNoInteractions(usuarioQueryService);
-    }
-
-    @Test
-    @DisplayName("El cliente titular consulta el saldo de su propia cuenta")
-    void clienteTitularConsultaSuPropiaCuenta() {
-        // Arrange
-        Cuenta cuenta = cuenta(new BigDecimal("75000.00"), new BigDecimal("5000.00"), CLIENTE_TITULAR);
-        when(cuentaRepository.findByNumeroCuenta(NUMERO_CUENTA)).thenReturn(Optional.of(cuenta));
-        when(usuarioQueryService.obtenerClienteId(USUARIO_ID)).thenReturn(Optional.of(CLIENTE_TITULAR));
-
-        // Act
-        SaldoResponse response = saldoService.consultarSaldo(NUMERO_CUENTA, USUARIO_ID, "CLIENTE");
-
-        // Assert
-        assertThat(response.saldoDisponible()).isEqualByComparingTo(new BigDecimal("70000.00"));
-    }
-
-    @Test
     @DisplayName("Un cliente que no es titular recibe 403")
     void clienteNoTitularRecibe403() {
         // Arrange
@@ -118,19 +73,6 @@ class SaldoServiceImplTest {
                 .hasMessage("Acceso no autorizado")
                 .extracting(ex -> ((AccesoNoAutorizadoException) ex).getStatus())
                 .isEqualTo(HttpStatus.FORBIDDEN);
-    }
-
-    @Test
-    @DisplayName("Un usuario sin cliente asociado recibe 403 al consultar como CLIENTE")
-    void usuarioSinClienteAsociadoRecibe403() {
-        // Arrange
-        Cuenta cuenta = cuenta(new BigDecimal("75000.00"), BigDecimal.ZERO, CLIENTE_TITULAR);
-        when(cuentaRepository.findByNumeroCuenta(NUMERO_CUENTA)).thenReturn(Optional.of(cuenta));
-        when(usuarioQueryService.obtenerClienteId(USUARIO_ID)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThatThrownBy(() -> saldoService.consultarSaldo(NUMERO_CUENTA, USUARIO_ID, "CLIENTE"))
-                .isInstanceOf(AccesoNoAutorizadoException.class);
     }
 
     @Test

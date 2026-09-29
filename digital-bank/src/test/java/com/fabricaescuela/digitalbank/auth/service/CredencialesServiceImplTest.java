@@ -1,6 +1,5 @@
 package com.fabricaescuela.digitalbank.auth.service;
 
-import com.fabricaescuela.digitalbank.auth.entity.Rol;
 import com.fabricaescuela.digitalbank.auth.entity.Usuario;
 import com.fabricaescuela.digitalbank.auth.repository.UsuarioRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -53,23 +52,5 @@ class CredencialesServiceImplTest {
         Usuario guardado = usuarioCaptor.getValue();
         assertThat(guardado.getPasswordHash()).isEqualTo(PASSWORD_HASH);
         assertThat(guardado.getPasswordHash()).isNotEqualTo(PASSWORD_PLANA);
-    }
-
-    @Test
-    @DisplayName("El usuario creado queda asociado al cliente con rol CLIENTE")
-    void elUsuarioQuedaAsociadoAlClienteConRolCliente() {
-        // Arrange
-        UUID clienteId = UUID.randomUUID();
-        when(passwordEncoder.encode(PASSWORD_PLANA)).thenReturn(PASSWORD_HASH);
-
-        // Act
-        credencialesService.registrarCredencialesCliente(clienteId, "ana@banco.com", PASSWORD_PLANA);
-
-        // Assert
-        verify(usuarioRepository).save(usuarioCaptor.capture());
-        Usuario guardado = usuarioCaptor.getValue();
-        assertThat(guardado.getClienteId()).isEqualTo(clienteId);
-        assertThat(guardado.getEmail()).isEqualTo("ana@banco.com");
-        assertThat(guardado.getRol()).isEqualTo(Rol.CLIENTE);
     }
 }

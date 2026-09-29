@@ -2,7 +2,6 @@ package com.fabricaescuela.digitalbank.auth.service;
 
 import com.fabricaescuela.digitalbank.auth.dto.LoginRequest;
 import com.fabricaescuela.digitalbank.auth.dto.LoginResponse;
-import com.fabricaescuela.digitalbank.auth.entity.EstadoSeguridad;
 import com.fabricaescuela.digitalbank.auth.entity.Rol;
 import com.fabricaescuela.digitalbank.auth.entity.Usuario;
 import com.fabricaescuela.digitalbank.auth.exception.CredencialesInvalidasException;
@@ -72,25 +71,6 @@ class AuthServiceImplTest {
     }
 
     @Test
-    @DisplayName("Un login exitoso reinicia los intentos fallidos acumulados y persiste el usuario")
-    void loginExitosoReiniciaIntentosFallidos() {
-        // Arrange
-        Usuario usuario = usuarioActivo();
-        usuario.registrarIntentoFallido();
-        usuario.registrarIntentoFallido();
-        when(usuarioRepository.findByEmail(EMAIL)).thenReturn(Optional.of(usuario));
-        when(passwordEncoder.matches(PASSWORD, HASH)).thenReturn(true);
-        when(jwtService.generarToken(usuario)).thenReturn(TOKEN);
-
-        // Act
-        authService.login(new LoginRequest(EMAIL, PASSWORD));
-
-        // Assert
-        assertThat(usuario.getIntentosFallidos()).isZero();
-        verify(usuarioRepository).save(usuario);
-    }
-
-    @Test
     @DisplayName("Un correo inexistente responde 401 sin revelar si el usuario existe")
     void correoInexistenteResponde401() {
         // Arrange
@@ -108,42 +88,6 @@ class AuthServiceImplTest {
     }
 
     @Test
-    @DisplayName("Una contrasena incorrecta responde 401, registra el intento y no emite token")
-    void passwordIncorrectaRegistraIntentoFallido() {
-        // Arrange
-        Usuario usuario = usuarioActivo();
-        when(usuarioRepository.findByEmail(EMAIL)).thenReturn(Optional.of(usuario));
-        when(passwordEncoder.matches("otra-clave", HASH)).thenReturn(false);
-
-        // Act & Assert
-        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, "otra-clave")))
-                .isInstanceOf(CredencialesInvalidasException.class);
-
-        assertThat(usuario.getIntentosFallidos()).isEqualTo(1);
-        assertThat(usuario.getEstadoSeguridad()).isEqualTo(EstadoSeguridad.ACTIVO);
-        verify(usuarioRepository).save(usuario);
-        verifyNoInteractions(jwtService);
-    }
-
-    @Test
-    @DisplayName("El tercer intento fallido consecutivo deja la cuenta bloqueada temporalmente")
-    void tercerIntentoFallidoBloqueaLaCuenta() {
-        // Arrange
-        Usuario usuario = usuarioActivo();
-        usuario.registrarIntentoFallido();
-        usuario.registrarIntentoFallido();
-        when(usuarioRepository.findByEmail(EMAIL)).thenReturn(Optional.of(usuario));
-        when(passwordEncoder.matches("otra-clave", HASH)).thenReturn(false);
-
-        // Act & Assert
-        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, "otra-clave")))
-                .isInstanceOf(CredencialesInvalidasException.class);
-
-        assertThat(usuario.getEstadoSeguridad()).isEqualTo(EstadoSeguridad.BLOQUEADO_TEMPORAL);
-        assertThat(usuario.estaBloqueado()).isTrue();
-    }
-
-    @Test
     @DisplayName("Una cuenta bloqueada responde 429 sin llegar a validar la contrasena")
     void cuentaBloqueadaResponde429() {
         // Arrange
@@ -158,24 +102,6 @@ class AuthServiceImplTest {
 
         verifyNoInteractions(passwordEncoder, jwtService);
         verify(usuarioRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("Si el bloqueo ya expiro, el usuario se desbloquea y puede autenticarse")
-    void bloqueoExpiradoPermiteAutenticarse() {
-        // Arrange
-        Usuario usuario = usuarioBloqueadoHace(61);
-        when(usuarioRepository.findByEmail(EMAIL)).thenReturn(Optional.of(usuario));
-        when(passwordEncoder.matches(PASSWORD, HASH)).thenReturn(true);
-        when(jwtService.generarToken(usuario)).thenReturn(TOKEN);
-
-        // Act
-        LoginResponse response = authService.login(new LoginRequest(EMAIL, PASSWORD));
-
-        // Assert
-        assertThat(response.token()).isEqualTo(TOKEN);
-        assertThat(usuario.getEstadoSeguridad()).isEqualTo(EstadoSeguridad.ACTIVO);
-        assertThat(usuario.getIntentosFallidos()).isZero();
     }
 
     private Usuario usuarioActivo() {

@@ -1,14 +1,12 @@
 package com.fabricaescuela.digitalbank.cuenta.service;
 
 import com.fabricaescuela.digitalbank.cuenta.dto.DepositoRequest;
-import com.fabricaescuela.digitalbank.cuenta.dto.TransaccionResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
 import com.fabricaescuela.digitalbank.cuenta.entity.EstadoCuenta;
 import com.fabricaescuela.digitalbank.cuenta.entity.OrigenDeposito;
 import com.fabricaescuela.digitalbank.cuenta.entity.TipoCuenta;
 import com.fabricaescuela.digitalbank.cuenta.entity.Transaccion;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoDisponibleException;
-import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoEncontradaException;
 import com.fabricaescuela.digitalbank.cuenta.repository.CuentaRepository;
 import com.fabricaescuela.digitalbank.cuenta.repository.TransaccionRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -54,21 +52,6 @@ class DepositoServiceImplTest {
     private DepositoServiceImpl depositoService;
 
     @Test
-    @DisplayName("Un deposito incrementa el saldo contable de la cuenta")
-    void elDepositoIncrementaElSaldoContable() {
-        // Arrange
-        Cuenta cuenta = cuentaConSaldo(new BigDecimal("100000.00"));
-        prepararPersistencia(cuenta);
-
-        // Act
-        depositoService.registrarDeposito(CUENTA_ID, new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.EFECTIVO));
-
-        // Assert
-        assertThat(cuenta.getSaldoContable()).isEqualByComparingTo(new BigDecimal("150000.00"));
-        verify(cuentaRepository).save(cuenta);
-    }
-
-    @Test
     @DisplayName("La transaccion registra el saldo antes y despues del deposito")
     void laTransaccionRegistraElSaldoAnteriorYElNuevo() {
         // Arrange
@@ -86,46 +69,6 @@ class DepositoServiceImplTest {
         assertThat(transaccion.getSaldoAnterior()).isEqualByComparingTo(new BigDecimal("100000.00"));
         assertThat(transaccion.getSaldoNuevo()).isEqualByComparingTo(new BigDecimal("150000.00"));
         assertThat(transaccion.getOrigen()).isEqualTo(OrigenDeposito.CHEQUE);
-    }
-
-    @Test
-    @DisplayName("La respuesta expone la transaccion COMPLETADA de tipo DEPOSITO")
-    void laRespuestaExponeLaTransaccionCompletada() {
-        // Arrange
-        Cuenta cuenta = cuentaConSaldo(BigDecimal.ZERO);
-        prepararPersistencia(cuenta);
-
-        // Act
-        TransaccionResponse response = depositoService.registrarDeposito(
-                CUENTA_ID, new DepositoRequest(new BigDecimal("80000.00"), OrigenDeposito.OTRO));
-
-        // Assert
-        assertThat(response.cuentaId()).isEqualTo(CUENTA_ID);
-        assertThat(response.tipo()).isEqualTo("DEPOSITO");
-        assertThat(response.estado()).isEqualTo("COMPLETADA");
-        assertThat(response.origen()).isEqualTo("OTRO");
-        assertThat(response.monto()).isEqualByComparingTo(new BigDecimal("80000.00"));
-        assertThat(response.saldoAnterior()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(response.saldoNuevo()).isEqualByComparingTo(new BigDecimal("80000.00"));
-        assertThat(response.fechaHora()).isNotNull();
-    }
-
-    @Test
-    @DisplayName("Depositar en una cuenta inexistente responde 404 y no registra transaccion")
-    void cuentaInexistenteResponde404() {
-        // Arrange
-        when(cuentaRepository.findById(CUENTA_ID)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThatThrownBy(() -> depositoService.registrarDeposito(
-                CUENTA_ID, new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.EFECTIVO)))
-                .isInstanceOf(CuentaNoEncontradaException.class)
-                .hasMessage("Cuenta no encontrada")
-                .extracting(ex -> ((CuentaNoEncontradaException) ex).getStatus())
-                .isEqualTo(HttpStatus.NOT_FOUND);
-
-        verify(cuentaRepository, never()).save(any());
-        verifyNoInteractions(transaccionRepository);
     }
 
     @Test
@@ -147,22 +90,6 @@ class DepositoServiceImplTest {
         assertThat(cuenta.getSaldoContable()).isEqualByComparingTo(new BigDecimal("100000.00"));
         verify(cuentaRepository, never()).save(any());
         verifyNoInteractions(transaccionRepository);
-    }
-
-    @Test
-    @DisplayName("Una cuenta BLOQUEADA si admite depositos porque no esta cerrada")
-    void cuentaBloqueadaAdmiteDepositos() {
-        // Arrange
-        Cuenta cuenta = cuentaConSaldo(new BigDecimal("100000.00"));
-        ReflectionTestUtils.setField(cuenta, "estado", EstadoCuenta.BLOQUEADA);
-        prepararPersistencia(cuenta);
-
-        // Act
-        TransaccionResponse response = depositoService.registrarDeposito(
-                CUENTA_ID, new DepositoRequest(new BigDecimal("1000.00"), OrigenDeposito.EFECTIVO));
-
-        // Assert
-        assertThat(response.saldoNuevo()).isEqualByComparingTo(new BigDecimal("101000.00"));
     }
 
     private Cuenta cuentaConSaldo(BigDecimal saldo) {

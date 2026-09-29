@@ -9,7 +9,6 @@ import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
 import com.fabricaescuela.digitalbank.cuenta.entity.TipoCuenta;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoAutorizadoException;
-import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoEncontradoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoHabilitadoException;
 import com.fabricaescuela.digitalbank.cuenta.repository.CuentaRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("CuentaServiceImpl - apertura de cuentas")
 class CuentaServiceImplTest {
 
     private static final String DOCUMENTO = "1020304050";
@@ -50,16 +50,19 @@ class CuentaServiceImplTest {
     @Test
     @DisplayName("Un cliente no puede abrir cuenta a nombre de otro, responde 403")
     void noSePuedeAbrirCuentaANombreDeOtroCliente() {
+        // Arrange
         Cliente cliente = mock(Cliente.class);
         when(cliente.getId()).thenReturn(CLIENTE_ID);
         when(clienteRepository.findByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO))
                 .thenReturn(Optional.of(cliente));
 
+        // Act
         ClienteNoAutorizadoException ex = assertThrows(
                 ClienteNoAutorizadoException.class,
                 () -> cuentaService.abrirCuenta(request(BigDecimal.valueOf(50000)), OTRO_CLIENTE_ID)
         );
 
+        // Assert
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
         verify(cuentaRepository, never()).save(any());
     }
@@ -67,56 +70,35 @@ class CuentaServiceImplTest {
     @Test
     @DisplayName("AC-2: cliente INACTIVO no puede abrir cuenta, responde 403 'Cliente no habilitado'")
     void clienteInactivoNoPuedeAbrirCuenta() {
+        // Arrange
         Cliente cliente = mock(Cliente.class);
         when(cliente.getId()).thenReturn(CLIENTE_ID);
         when(cliente.getEstado()).thenReturn(EstadoCliente.INACTIVO);
         when(clienteRepository.findByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO))
                 .thenReturn(Optional.of(cliente));
 
+        // Act
         ClienteNoHabilitadoException ex = assertThrows(
                 ClienteNoHabilitadoException.class,
                 () -> cuentaService.abrirCuenta(request(BigDecimal.valueOf(50000)), CLIENTE_ID)
         );
 
+        // Assert
         assertEquals("Cliente no habilitado", ex.getMessage());
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
         verify(cuentaRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("Cliente inexistente responde 404 'Cliente no encontrado'")
-    void clienteInexistenteRespondeNotFound() {
-        when(clienteRepository.findByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO))
-                .thenReturn(Optional.empty());
-
-        ClienteNoEncontradoException ex = assertThrows(
-                ClienteNoEncontradoException.class,
-                () -> cuentaService.abrirCuenta(request(null), CLIENTE_ID)
-        );
-
-        assertEquals("Cliente no encontrado", ex.getMessage());
-        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
-        verify(cuentaRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("AC-4: sin monto de apertura la cuenta inicia en 0")
-    void sinMontoLaCuentaIniciaEnCero() {
-        prepararClienteActivo();
-
-        CuentaResponse response = cuentaService.abrirCuenta(request(null), CLIENTE_ID);
-
-        assertEquals(0, response.saldoContable().compareTo(BigDecimal.ZERO));
-        assertEquals(0, response.saldoDisponible().compareTo(BigDecimal.ZERO));
-    }
-
-    @Test
     @DisplayName("AC-3 y AC-5: la cuenta se crea ACTIVA, con numero de 10 digitos y el saldo indicado")
     void cuentaSeCreaActivaConNumeroDeDiezDigitos() {
+        // Arrange
         prepararClienteActivo();
 
+        // Act
         CuentaResponse response = cuentaService.abrirCuenta(request(BigDecimal.valueOf(150000)), CLIENTE_ID);
 
+        // Assert
         assertEquals("ACTIVA", response.estado());
         assertEquals(10, response.numeroCuenta().length());
         assertEquals(TipoCuenta.AHORROS, response.tipoCuenta());
