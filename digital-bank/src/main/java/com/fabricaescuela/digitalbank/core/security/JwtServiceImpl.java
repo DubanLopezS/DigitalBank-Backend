@@ -1,7 +1,6 @@
 package com.fabricaescuela.digitalbank.core.security;
 
 import com.fabricaescuela.digitalbank.auth.entity.Usuario;
-
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -15,18 +14,19 @@ import java.util.Date;
 import java.util.UUID;
 
 @Service
-public class JwtService {
+public class JwtServiceImpl implements IJwtService {
 
     private final SecretKey key;
     private final long expirationMinutes;
 
-    public JwtService(
+    public JwtServiceImpl(
             @Value("${security.jwt.secret}") String secret,
             @Value("${security.jwt.expiration-minutes}") long expirationMinutes) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationMinutes = expirationMinutes;
     }
 
+    @Override
     public String generarToken(Usuario usuario) {
         Date ahora = new Date();
         Date expiracion = new Date(ahora.getTime() + minutosAMs(expirationMinutes));
@@ -47,6 +47,7 @@ public class JwtService {
                 .compact();
     }
 
+    @Override
     public long getExpirationMinutes() {
         return expirationMinutes;
     }
@@ -55,14 +56,16 @@ public class JwtService {
         return minutos * 60 * 1000;
     }
 
+    @Override
     public Claims parseToken(String token) {
-    return Jwts.parser()
-            .verifyWith(key)
-            .build()
-            .parseSignedClaims(token)
-            .getPayload();
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
+    @Override
     public boolean esTokenValido(String token) {
         try {
             parseToken(token);
@@ -72,14 +75,17 @@ public class JwtService {
         }
     }
 
+    @Override
     public UUID extraerUsuarioId(String token) {
         return UUID.fromString(parseToken(token).getSubject());
     }
 
+    @Override
     public String extraerRol(String token) {
         return parseToken(token).get("rol", String.class);
     }
 
+    @Override
     public UUID extraerClienteId(String token) {
         String clienteId = parseToken(token).get("clienteId", String.class);
         return clienteId != null ? UUID.fromString(clienteId) : null;

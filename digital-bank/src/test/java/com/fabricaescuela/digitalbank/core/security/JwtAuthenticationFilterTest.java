@@ -29,7 +29,7 @@ class JwtAuthenticationFilterTest {
 
     private static final String SECRETO = "secreto-de-pruebas-digital-bank-0123456789";
 
-    private JwtService jwtService;
+    private IJwtService jwtService;
     private JwtAuthenticationFilter filtro;
     private MockHttpServletRequest request;
     private MockHttpServletResponse response;
@@ -37,7 +37,7 @@ class JwtAuthenticationFilterTest {
 
     @BeforeEach
     void preparar() {
-        jwtService = new JwtService(SECRETO, 60);
+        jwtService = new JwtServiceImpl(SECRETO, 60);
         filtro = new JwtAuthenticationFilter(jwtService);
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
@@ -116,7 +116,7 @@ class JwtAuthenticationFilterTest {
     @DisplayName("Un token firmado con otro secreto no autentica")
     void tokenDeOtroEmisorNoAutentica() throws Exception {
         // Arrange
-        JwtService emisorIntruso = new JwtService("otro-secreto-completamente-distinto-987654", 60);
+        JwtServiceImpl emisorIntruso = new JwtServiceImpl("otro-secreto-completamente-distinto-987654", 60);
         String tokenAjeno = emisorIntruso.generarToken(usuario(UUID.randomUUID(), Rol.ADMIN));
         request.addHeader("Authorization", "Bearer " + tokenAjeno);
 
