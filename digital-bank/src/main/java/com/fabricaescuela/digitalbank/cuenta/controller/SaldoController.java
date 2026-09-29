@@ -1,7 +1,8 @@
 package com.fabricaescuela.digitalbank.cuenta.controller;
 
 import com.fabricaescuela.digitalbank.cuenta.dto.SaldoResponse;
-import com.fabricaescuela.digitalbank.cuenta.interfaces.SaldoService;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ISaldoService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -16,15 +17,15 @@ import java.util.UUID;
 @RequestMapping("/api/cuentas")
 public class SaldoController {
 
-    private final SaldoService saldoService;
+    private final ISaldoService saldoService;
 
-    public SaldoController(SaldoService saldoService) {
+    public SaldoController(ISaldoService saldoService) {
         this.saldoService = saldoService;
     }
 
     @GetMapping("/{numeroCuenta}/saldo")
     public ResponseEntity<SaldoResponse> consultarSaldo(@PathVariable String numeroCuenta,
-                                                          Authentication authentication) {
+                                                        Authentication authentication) {
         UUID usuarioId = (UUID) authentication.getPrincipal();
         String rol = obtenerRol(authentication);
 

@@ -1,12 +1,12 @@
 package com.fabricaescuela.digitalbank.cuenta.service;
 
-import com.fabricaescuela.digitalbank.auth.interfaces.UsuarioQueryService;
+import com.fabricaescuela.digitalbank.auth.interfaces.services.IUsuarioQueryService;
 import com.fabricaescuela.digitalbank.core.exception.AccesoNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.dto.SaldoResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
 import com.fabricaescuela.digitalbank.cuenta.entity.TipoCuenta;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoEncontradaException;
-import com.fabricaescuela.digitalbank.cuenta.repository.CuentaRepository;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ICuentaRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,10 +35,10 @@ class SaldoServiceImplTest {
     private static final UUID OTRO_CLIENTE = UUID.randomUUID();
 
     @Mock
-    private CuentaRepository cuentaRepository;
+    private ICuentaRepository cuentaRepository;
 
     @Mock
-    private UsuarioQueryService usuarioQueryService;
+    private IUsuarioQueryService usuarioQueryService;
 
     @InjectMocks
     private SaldoServiceImpl saldoService;

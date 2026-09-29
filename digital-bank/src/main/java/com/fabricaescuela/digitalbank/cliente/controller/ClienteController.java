@@ -2,7 +2,8 @@ package com.fabricaescuela.digitalbank.cliente.controller;
 
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteRegistroRequest;
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteResponse;
-import com.fabricaescuela.digitalbank.cliente.interfaces.ClienteService;
+import com.fabricaescuela.digitalbank.cliente.interfaces.services.IClienteService;
+
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,9 +14,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/clientes")
 public class ClienteController {
 
-    private final ClienteService clienteService;
+    private final IClienteService clienteService;
 
-    public ClienteController(ClienteService clienteService) {
+    public ClienteController(IClienteService clienteService) {
         this.clienteService = clienteService;
     }
 

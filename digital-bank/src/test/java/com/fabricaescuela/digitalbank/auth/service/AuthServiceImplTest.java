@@ -7,7 +7,7 @@ import com.fabricaescuela.digitalbank.auth.entity.Rol;
 import com.fabricaescuela.digitalbank.auth.entity.Usuario;
 import com.fabricaescuela.digitalbank.auth.exception.CredencialesInvalidasException;
 import com.fabricaescuela.digitalbank.auth.exception.CuentaBloqueadaException;
-import com.fabricaescuela.digitalbank.auth.repository.UsuarioRepository;
+import com.fabricaescuela.digitalbank.auth.interfaces.repositories.IUsuarioRepository;
 import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,7 @@ class AuthServiceImplTest {
     private static final String TOKEN = "jwt.de.prueba";
 
     @Mock
-    private UsuarioRepository usuarioRepository;
+    private IUsuarioRepository usuarioRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;

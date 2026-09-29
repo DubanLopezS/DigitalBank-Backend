@@ -1,12 +1,12 @@
 package com.fabricaescuela.digitalbank.cuenta.service;
 
-import com.fabricaescuela.digitalbank.auth.interfaces.UsuarioQueryService;
+import com.fabricaescuela.digitalbank.auth.interfaces.services.IUsuarioQueryService;
 import com.fabricaescuela.digitalbank.core.exception.AccesoNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.dto.SaldoResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoEncontradaException;
-import com.fabricaescuela.digitalbank.cuenta.interfaces.SaldoService;
-import com.fabricaescuela.digitalbank.cuenta.repository.CuentaRepository;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ICuentaRepository;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ISaldoService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,15 +14,15 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
-public class SaldoServiceImpl implements SaldoService {
+public class SaldoServiceImpl implements ISaldoService {
 
     private static final String ROL_ADMIN = "ADMIN";
     private static final String ROL_CAJERO = "CAJERO";
 
-    private final CuentaRepository cuentaRepository;
-    private final UsuarioQueryService usuarioQueryService;
+    private final ICuentaRepository cuentaRepository;
+    private final IUsuarioQueryService usuarioQueryService;
 
-    public SaldoServiceImpl(CuentaRepository cuentaRepository, UsuarioQueryService usuarioQueryService) {
+    public SaldoServiceImpl(ICuentaRepository cuentaRepository, IUsuarioQueryService usuarioQueryService) {
         this.cuentaRepository = cuentaRepository;
         this.usuarioQueryService = usuarioQueryService;
     }

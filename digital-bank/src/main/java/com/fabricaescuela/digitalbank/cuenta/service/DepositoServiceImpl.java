@@ -6,9 +6,9 @@ import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
 import com.fabricaescuela.digitalbank.cuenta.entity.Transaccion;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoDisponibleException;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoEncontradaException;
-import com.fabricaescuela.digitalbank.cuenta.interfaces.DepositoService;
-import com.fabricaescuela.digitalbank.cuenta.repository.CuentaRepository;
-import com.fabricaescuela.digitalbank.cuenta.repository.TransaccionRepository;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ICuentaRepository;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ITransaccionRepository;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.services.IDepositoService;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,12 +17,12 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
-public class DepositoServiceImpl implements DepositoService {
+public class DepositoServiceImpl implements IDepositoService {
 
-    private final CuentaRepository cuentaRepository;
-    private final TransaccionRepository transaccionRepository;
+    private final ICuentaRepository cuentaRepository;
+    private final ITransaccionRepository transaccionRepository;
 
-    public DepositoServiceImpl(CuentaRepository cuentaRepository, TransaccionRepository transaccionRepository) {
+    public DepositoServiceImpl(ICuentaRepository cuentaRepository, ITransaccionRepository transaccionRepository) {
         this.cuentaRepository = cuentaRepository;
         this.transaccionRepository = transaccionRepository;
     }

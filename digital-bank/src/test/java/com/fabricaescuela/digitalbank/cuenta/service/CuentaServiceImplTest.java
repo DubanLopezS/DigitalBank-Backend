@@ -3,7 +3,7 @@ package com.fabricaescuela.digitalbank.cuenta.service;
 import com.fabricaescuela.digitalbank.cliente.entity.Cliente;
 import com.fabricaescuela.digitalbank.cliente.entity.EstadoCliente;
 import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
-import com.fabricaescuela.digitalbank.cliente.repository.ClienteRepository;
+import com.fabricaescuela.digitalbank.cliente.interfaces.repositories.IClienteRepository;
 import com.fabricaescuela.digitalbank.cuenta.dto.AperturaCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
@@ -11,7 +11,7 @@ import com.fabricaescuela.digitalbank.cuenta.entity.TipoCuenta;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoEncontradoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoHabilitadoException;
-import com.fabricaescuela.digitalbank.cuenta.repository.CuentaRepository;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ICuentaRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,10 +36,10 @@ class CuentaServiceImplTest {
     private static final UUID OTRO_CLIENTE_ID = UUID.randomUUID();
 
     @Mock
-    private CuentaRepository cuentaRepository;
+    private ICuentaRepository cuentaRepository;
 
     @Mock
-    private ClienteRepository clienteRepository;
+    private IClienteRepository clienteRepository;
 
     @Mock
     private GeneradorNumeroCuenta generadorNumeroCuenta;

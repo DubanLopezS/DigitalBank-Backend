@@ -6,8 +6,9 @@ import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
 import com.fabricaescuela.digitalbank.cuenta.dto.DepositoRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.TransaccionResponse;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoAutorizadoException;
-import com.fabricaescuela.digitalbank.cuenta.interfaces.CuentaService;
-import com.fabricaescuela.digitalbank.cuenta.interfaces.DepositoService;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ICuentaService;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.services.IDepositoService;
+
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,11 +23,11 @@ public class CuentaController {
 
     private static final String PREFIJO_BEARER = "Bearer ";
 
-    private final CuentaService cuentaService;
+    private final ICuentaService cuentaService;
     private final IJwtService jwtService;
-    private final DepositoService depositoService;
+    private final IDepositoService depositoService;
 
-    public CuentaController(CuentaService cuentaService, IJwtService jwtService, DepositoService depositoService) {
+    public CuentaController(ICuentaService cuentaService, IJwtService jwtService, IDepositoService depositoService) {
         this.cuentaService = cuentaService;
         this.jwtService = jwtService;
         this.depositoService = depositoService;

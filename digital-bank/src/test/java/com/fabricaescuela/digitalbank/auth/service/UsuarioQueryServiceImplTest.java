@@ -2,7 +2,7 @@ package com.fabricaescuela.digitalbank.auth.service;
 
 import com.fabricaescuela.digitalbank.auth.entity.Rol;
 import com.fabricaescuela.digitalbank.auth.entity.Usuario;
-import com.fabricaescuela.digitalbank.auth.repository.UsuarioRepository;
+import com.fabricaescuela.digitalbank.auth.interfaces.repositories.IUsuarioRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
 class UsuarioQueryServiceImplTest {
 
     @Mock
-    private UsuarioRepository usuarioRepository;
+    private IUsuarioRepository usuarioRepository;
 
     @InjectMocks
     private UsuarioQueryServiceImpl usuarioQueryService;

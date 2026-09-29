@@ -2,7 +2,8 @@ package com.fabricaescuela.digitalbank.auth.controller;
 
 import com.fabricaescuela.digitalbank.auth.dto.LoginRequest;
 import com.fabricaescuela.digitalbank.auth.dto.LoginResponse;
-import com.fabricaescuela.digitalbank.auth.interfaces.AuthService;
+import com.fabricaescuela.digitalbank.auth.interfaces.services.IAuthService;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
@@ -12,9 +13,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthService authService;
+    private final IAuthService authService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(IAuthService authService) {
         this.authService = authService;
     }
 

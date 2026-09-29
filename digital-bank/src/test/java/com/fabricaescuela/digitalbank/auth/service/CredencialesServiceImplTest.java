@@ -2,7 +2,7 @@ package com.fabricaescuela.digitalbank.auth.service;
 
 import com.fabricaescuela.digitalbank.auth.entity.Rol;
 import com.fabricaescuela.digitalbank.auth.entity.Usuario;
-import com.fabricaescuela.digitalbank.auth.repository.UsuarioRepository;
+import com.fabricaescuela.digitalbank.auth.interfaces.repositories.IUsuarioRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +27,7 @@ class CredencialesServiceImplTest {
     private static final String PASSWORD_HASH = "$2a$10$hashGenerado";
 
     @Mock
-    private UsuarioRepository usuarioRepository;
+    private IUsuarioRepository usuarioRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;

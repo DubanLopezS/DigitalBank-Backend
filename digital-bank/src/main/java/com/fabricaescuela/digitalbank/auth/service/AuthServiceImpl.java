@@ -5,8 +5,8 @@ import com.fabricaescuela.digitalbank.auth.dto.LoginResponse;
 import com.fabricaescuela.digitalbank.auth.entity.Usuario;
 import com.fabricaescuela.digitalbank.auth.exception.CredencialesInvalidasException;
 import com.fabricaescuela.digitalbank.auth.exception.CuentaBloqueadaException;
-import com.fabricaescuela.digitalbank.auth.interfaces.AuthService;
-import com.fabricaescuela.digitalbank.auth.repository.UsuarioRepository;
+import com.fabricaescuela.digitalbank.auth.interfaces.repositories.IUsuarioRepository;
+import com.fabricaescuela.digitalbank.auth.interfaces.services.IAuthService;
 import com.fabricaescuela.digitalbank.core.security.IJwtService;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,13 +14,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class AuthServiceImpl implements AuthService {
+public class AuthServiceImpl implements IAuthService {
 
-    private final UsuarioRepository usuarioRepository;
+    private final IUsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final IJwtService jwtService;
 
-    public AuthServiceImpl(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder, 
+    public AuthServiceImpl(IUsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder, 
                             IJwtService jwtService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;

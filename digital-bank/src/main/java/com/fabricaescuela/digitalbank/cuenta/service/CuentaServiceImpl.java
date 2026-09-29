@@ -2,15 +2,15 @@ package com.fabricaescuela.digitalbank.cuenta.service;
 
 import com.fabricaescuela.digitalbank.cliente.entity.Cliente;
 import com.fabricaescuela.digitalbank.cliente.entity.EstadoCliente;
-import com.fabricaescuela.digitalbank.cliente.repository.ClienteRepository;
+import com.fabricaescuela.digitalbank.cliente.interfaces.repositories.IClienteRepository;
 import com.fabricaescuela.digitalbank.cuenta.dto.AperturaCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoEncontradoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoHabilitadoException;
-import com.fabricaescuela.digitalbank.cuenta.interfaces.CuentaService;
-import com.fabricaescuela.digitalbank.cuenta.repository.CuentaRepository;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ICuentaRepository;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ICuentaService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,15 +20,15 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Service
-public class CuentaServiceImpl implements CuentaService {
+public class CuentaServiceImpl implements ICuentaService {
 
-    private final CuentaRepository cuentaRepository;
-    private final ClienteRepository clienteRepository;
+    private final ICuentaRepository cuentaRepository;
+    private final IClienteRepository clienteRepository;
     private final GeneradorNumeroCuenta generadorNumeroCuenta;
 
-    public CuentaServiceImpl(CuentaRepository cuentaRepository,
-                             ClienteRepository clienteRepository,
-                             GeneradorNumeroCuenta generadorNumeroCuenta) {
+    public CuentaServiceImpl(ICuentaRepository cuentaRepository,
+                            IClienteRepository clienteRepository,
+                            GeneradorNumeroCuenta generadorNumeroCuenta) {
         this.cuentaRepository = cuentaRepository;
         this.clienteRepository = clienteRepository;
         this.generadorNumeroCuenta = generadorNumeroCuenta;
