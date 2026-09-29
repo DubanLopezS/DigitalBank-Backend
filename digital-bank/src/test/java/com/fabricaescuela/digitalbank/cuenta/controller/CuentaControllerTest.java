@@ -1,7 +1,7 @@
 package com.fabricaescuela.digitalbank.cuenta.controller;
 
 import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
-import com.fabricaescuela.digitalbank.core.security.JwtService;
+import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import com.fabricaescuela.digitalbank.cuenta.dto.AperturaCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
 import com.fabricaescuela.digitalbank.cuenta.dto.DepositoRequest;
@@ -41,7 +41,7 @@ class CuentaControllerTest {
     private CuentaService cuentaService;
 
     @Mock
-    private JwtService jwtService;
+    private IJwtService jwtService;
 
     @Mock
     private DepositoService depositoService;

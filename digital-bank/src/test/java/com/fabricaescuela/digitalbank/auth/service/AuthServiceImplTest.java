@@ -8,7 +8,7 @@ import com.fabricaescuela.digitalbank.auth.entity.Usuario;
 import com.fabricaescuela.digitalbank.auth.exception.CredencialesInvalidasException;
 import com.fabricaescuela.digitalbank.auth.exception.CuentaBloqueadaException;
 import com.fabricaescuela.digitalbank.auth.repository.UsuarioRepository;
-import com.fabricaescuela.digitalbank.core.security.JwtService;
+import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,7 +47,7 @@ class AuthServiceImplTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private JwtService jwtService;
+    private IJwtService jwtService;
 
     @InjectMocks
     private AuthServiceImpl authService;

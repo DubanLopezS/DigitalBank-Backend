@@ -22,11 +22,11 @@ class JwtServiceTest {
     private static final String SECRETO = "secreto-de-pruebas-digital-bank-0123456789";
     private static final String OTRO_SECRETO = "otro-secreto-completamente-distinto-987654";
 
-    private JwtService jwtService;
+    private IJwtService jwtService;
 
     @BeforeEach
     void crearServicio() {
-        jwtService = new JwtService(SECRETO, 60);
+        jwtService = new JwtServiceImpl(SECRETO, 60);
     }
 
     @Test
@@ -97,7 +97,7 @@ class JwtServiceTest {
     @DisplayName("Un token firmado con otro secreto no es valido")
     void tokenFirmadoConOtroSecretoNoEsValido() {
         // Arrange
-        JwtService servicioIntruso = new JwtService(OTRO_SECRETO, 60);
+        JwtServiceImpl servicioIntruso = new JwtServiceImpl(OTRO_SECRETO, 60);
         String tokenAjeno = servicioIntruso.generarToken(
                 usuario(UUID.randomUUID(), UUID.randomUUID(), "ana@banco.com", Rol.CLIENTE));
 
@@ -112,7 +112,7 @@ class JwtServiceTest {
     @DisplayName("Un token expirado no es valido")
     void tokenExpiradoNoEsValido() {
         // Arrange: vigencia negativa, el token nace caducado
-        JwtService servicioVencido = new JwtService(SECRETO, -1);
+        JwtServiceImpl servicioVencido = new JwtServiceImpl(SECRETO, -1);
         String tokenVencido = servicioVencido.generarToken(
                 usuario(UUID.randomUUID(), UUID.randomUUID(), "ana@banco.com", Rol.CLIENTE));
 
@@ -168,7 +168,7 @@ class JwtServiceTest {
     @DisplayName("La vigencia configurada se expone tal como se recibio")
     void laVigenciaConfiguradaSeExpone() {
         // Arrange
-        JwtService servicio = new JwtService(SECRETO, 15);
+        JwtServiceImpl servicio = new JwtServiceImpl(SECRETO, 15);
 
         // Act
         long minutos = servicio.getExpirationMinutes();

@@ -1,6 +1,6 @@
 package com.fabricaescuela.digitalbank.cuenta.controller;
 
-import com.fabricaescuela.digitalbank.core.security.JwtService;
+import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import com.fabricaescuela.digitalbank.cuenta.dto.AperturaCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
 import com.fabricaescuela.digitalbank.cuenta.dto.DepositoRequest;
@@ -23,10 +23,10 @@ public class CuentaController {
     private static final String PREFIJO_BEARER = "Bearer ";
 
     private final CuentaService cuentaService;
-    private final JwtService jwtService;
+    private final IJwtService jwtService;
     private final DepositoService depositoService;
 
-    public CuentaController(CuentaService cuentaService, JwtService jwtService, DepositoService depositoService) {
+    public CuentaController(CuentaService cuentaService, IJwtService jwtService, DepositoService depositoService) {
         this.cuentaService = cuentaService;
         this.jwtService = jwtService;
         this.depositoService = depositoService;
