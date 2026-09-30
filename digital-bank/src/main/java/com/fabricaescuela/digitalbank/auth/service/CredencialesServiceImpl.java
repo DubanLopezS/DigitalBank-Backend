@@ -2,20 +2,20 @@ package com.fabricaescuela.digitalbank.auth.service;
 
 import com.fabricaescuela.digitalbank.auth.entity.Rol;
 import com.fabricaescuela.digitalbank.auth.entity.Usuario;
-import com.fabricaescuela.digitalbank.auth.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.fabricaescuela.digitalbank.auth.interfaces.CredencialesService;
+import com.fabricaescuela.digitalbank.auth.interfaces.repositories.IUsuarioRepository;
+import com.fabricaescuela.digitalbank.auth.interfaces.services.ICredencialesService;
 
 import java.util.UUID;
 
 @Service
-public class CredencialesServiceImpl implements CredencialesService {
+public class CredencialesServiceImpl implements ICredencialesService {
 
-    private final UsuarioRepository usuarioRepository;
+    private final IUsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public CredencialesServiceImpl(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+    public CredencialesServiceImpl(IUsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
     }

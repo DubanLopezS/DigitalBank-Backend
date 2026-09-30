@@ -9,8 +9,8 @@ import com.fabricaescuela.digitalbank.cuenta.entity.TipoCuenta;
 import com.fabricaescuela.digitalbank.cuenta.entity.Transaccion;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoDisponibleException;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoEncontradaException;
-import com.fabricaescuela.digitalbank.cuenta.repository.CuentaRepository;
-import com.fabricaescuela.digitalbank.cuenta.repository.TransaccionRepository;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ICuentaRepository;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ITransaccionRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,10 +42,10 @@ class DepositoServiceImplTest {
     private static final String NUMERO_CUENTA = "1234567890";
 
     @Mock
-    private CuentaRepository cuentaRepository;
+    private ICuentaRepository cuentaRepository;
 
     @Mock
-    private TransaccionRepository transaccionRepository;
+    private ITransaccionRepository transaccionRepository;
 
     @Captor
     private ArgumentCaptor<Transaccion> transaccionCaptor;

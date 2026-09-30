@@ -9,8 +9,9 @@ import com.fabricaescuela.digitalbank.cuenta.dto.TransaccionResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.OrigenDeposito;
 import com.fabricaescuela.digitalbank.cuenta.entity.TipoCuenta;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoAutorizadoException;
-import com.fabricaescuela.digitalbank.cuenta.interfaces.CuentaService;
-import com.fabricaescuela.digitalbank.cuenta.interfaces.DepositoService;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ICuentaService;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.services.IDepositoService;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,13 +39,13 @@ class CuentaControllerTest {
     private static final String CABECERA_VALIDA = "Bearer " + TOKEN;
 
     @Mock
-    private CuentaService cuentaService;
+    private ICuentaService cuentaService;
 
     @Mock
     private IJwtService jwtService;
 
     @Mock
-    private DepositoService depositoService;
+    private IDepositoService depositoService;
 
     @InjectMocks
     private CuentaController cuentaController;

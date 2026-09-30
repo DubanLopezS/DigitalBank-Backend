@@ -1,13 +1,13 @@
 package com.fabricaescuela.digitalbank.cliente.service;
 
-import com.fabricaescuela.digitalbank.auth.interfaces.CredencialesService;
+import com.fabricaescuela.digitalbank.auth.interfaces.services.ICredencialesService;
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteRegistroRequest;
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteResponse;
 import com.fabricaescuela.digitalbank.cliente.entity.Cliente;
 import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
 import com.fabricaescuela.digitalbank.cliente.exception.ClienteMenorDeEdadException;
 import com.fabricaescuela.digitalbank.cliente.exception.ClienteYaExisteException;
-import com.fabricaescuela.digitalbank.cliente.repository.ClienteRepository;
+import com.fabricaescuela.digitalbank.cliente.interfaces.repositories.IClienteRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,10 +37,10 @@ class ClienteServiceImplTest {
     private static final String PASSWORD = "Password123";
 
     @Mock
-    private ClienteRepository clienteRepository;
+    private IClienteRepository clienteRepository;
 
     @Mock
-    private CredencialesService credencialesService;
+    private ICredencialesService credencialesService;
 
     @InjectMocks
     private ClienteServiceImpl clienteService;

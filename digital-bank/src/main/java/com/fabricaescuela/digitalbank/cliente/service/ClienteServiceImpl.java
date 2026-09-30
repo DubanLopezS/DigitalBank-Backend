@@ -6,24 +6,24 @@ import com.fabricaescuela.digitalbank.cliente.entity.Cliente;
 import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
 import com.fabricaescuela.digitalbank.cliente.exception.ClienteMenorDeEdadException;
 import com.fabricaescuela.digitalbank.cliente.exception.ClienteYaExisteException;
-import com.fabricaescuela.digitalbank.cliente.repository.ClienteRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.fabricaescuela.digitalbank.cliente.interfaces.ClienteService;
-import com.fabricaescuela.digitalbank.auth.interfaces.CredencialesService;
+import com.fabricaescuela.digitalbank.cliente.interfaces.repositories.IClienteRepository;
+import com.fabricaescuela.digitalbank.cliente.interfaces.services.IClienteService;
+import com.fabricaescuela.digitalbank.auth.interfaces.services.ICredencialesService;
 
 import java.time.LocalDate;
 import java.time.Period;
 
 @Service
-public class ClienteServiceImpl implements ClienteService {
+public class ClienteServiceImpl implements IClienteService {
 
     private static final int EDAD_MINIMA = 18;
 
-    private final ClienteRepository clienteRepository;
-    private final CredencialesService credencialesService;
+    private final IClienteRepository clienteRepository;
+    private final ICredencialesService credencialesService;
 
-    public ClienteServiceImpl(ClienteRepository clienteRepository, CredencialesService credencialesService) {
+    public ClienteServiceImpl(IClienteRepository clienteRepository, ICredencialesService credencialesService) {
         this.clienteRepository = clienteRepository;
         this.credencialesService = credencialesService;
     }

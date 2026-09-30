@@ -1,7 +1,8 @@
 package com.fabricaescuela.digitalbank.cuenta.controller;
 
 import com.fabricaescuela.digitalbank.cuenta.dto.SaldoResponse;
-import com.fabricaescuela.digitalbank.cuenta.interfaces.SaldoService;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ISaldoService;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +37,7 @@ class SaldoControllerTest {
     private static final String NUMERO_CUENTA = "1234567890";
 
     @Mock
-    private SaldoService saldoService;
+    private ISaldoService saldoService;
 
     @Captor
     private ArgumentCaptor<String> rolCaptor;

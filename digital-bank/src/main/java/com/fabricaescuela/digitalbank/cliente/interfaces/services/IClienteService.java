@@ -1,8 +1,8 @@
-package com.fabricaescuela.digitalbank.cliente.interfaces;
+package com.fabricaescuela.digitalbank.cliente.interfaces.services;
 
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteRegistroRequest;
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteResponse;
 
-public interface ClienteService {
+public interface IClienteService {
     ClienteResponse registrarCliente(ClienteRegistroRequest request);
 }

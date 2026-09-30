@@ -3,7 +3,8 @@ package com.fabricaescuela.digitalbank.auth.controller;
 import com.fabricaescuela.digitalbank.auth.dto.LoginRequest;
 import com.fabricaescuela.digitalbank.auth.dto.LoginResponse;
 import com.fabricaescuela.digitalbank.auth.exception.CredencialesInvalidasException;
-import com.fabricaescuela.digitalbank.auth.interfaces.AuthService;
+import com.fabricaescuela.digitalbank.auth.interfaces.services.IAuthService;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,7 +23,7 @@ import static org.mockito.Mockito.when;
 class AuthControllerTest {
 
     @Mock
-    private AuthService authService;
+    private IAuthService authService;
 
     @InjectMocks
     private AuthController authController;

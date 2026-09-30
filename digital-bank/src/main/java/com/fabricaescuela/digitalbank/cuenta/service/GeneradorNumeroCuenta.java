@@ -1,6 +1,6 @@
 package com.fabricaescuela.digitalbank.cuenta.service;
 
-import com.fabricaescuela.digitalbank.cuenta.repository.CuentaRepository;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ICuentaRepository;
 import org.springframework.stereotype.Component;
 
 import java.security.SecureRandom;
@@ -12,9 +12,9 @@ public class GeneradorNumeroCuenta {
     private static final int MAX_INTENTOS = 25;
 
     private final SecureRandom random = new SecureRandom();
-    private final CuentaRepository cuentaRepository;
+    private final ICuentaRepository cuentaRepository;
 
-    public GeneradorNumeroCuenta(CuentaRepository cuentaRepository) {
+    public GeneradorNumeroCuenta(ICuentaRepository cuentaRepository) {
         this.cuentaRepository = cuentaRepository;
     }
 

@@ -4,7 +4,8 @@ import com.fabricaescuela.digitalbank.cliente.dto.ClienteRegistroRequest;
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteResponse;
 import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
 import com.fabricaescuela.digitalbank.cliente.exception.ClienteYaExisteException;
-import com.fabricaescuela.digitalbank.cliente.interfaces.ClienteService;
+import com.fabricaescuela.digitalbank.cliente.interfaces.services.IClienteService;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +28,7 @@ import static org.mockito.Mockito.when;
 class ClienteControllerTest {
 
     @Mock
-    private ClienteService clienteService;
+    private IClienteService clienteService;
 
     @InjectMocks
     private ClienteController clienteController;

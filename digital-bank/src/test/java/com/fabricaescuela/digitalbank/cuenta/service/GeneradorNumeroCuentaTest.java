@@ -1,6 +1,6 @@
 package com.fabricaescuela.digitalbank.cuenta.service;
 
-import com.fabricaescuela.digitalbank.cuenta.repository.CuentaRepository;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ICuentaRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +25,7 @@ class GeneradorNumeroCuentaTest {
     private static final int MAX_INTENTOS = 25;
 
     @Mock
-    private CuentaRepository cuentaRepository;
+    private ICuentaRepository cuentaRepository;
 
     @InjectMocks
     private GeneradorNumeroCuenta generador;
