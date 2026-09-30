@@ -8,6 +8,7 @@ import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
 import com.fabricaescuela.digitalbank.cliente.exception.ClienteMenorDeEdadException;
 import com.fabricaescuela.digitalbank.cliente.exception.ClienteYaExisteException;
 import com.fabricaescuela.digitalbank.cliente.repository.ClienteRepository;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -88,6 +89,30 @@ class ClienteServiceImplTest {
 
         verify(clienteRepository, never()).save(any());
         verifyNoInteractions(credencialesService);
+    }
+
+    /**
+     * Reproduce HZ-08. Un correo es el mismo sin importar mayúsculas y
+     * minúsculas, así que ANA@BANCO.COM debe chocar con ana@banco.com.
+     * La prueba asume que la corrección normaliza el correo a minúsculas
+     * antes de consultar el repositorio.
+     */
+    @Test
+    @Disabled("HZ-08 abierto: se activa en el Pull Request que corrige el defecto")
+    @DisplayName("HZ-08: un correo ya registrado escrito en mayusculas responde 409")
+    void emailDuplicadoEnMayusculasResponde409() {
+        // Arrange
+        ClienteRegistroRequest request = new ClienteRegistroRequest(
+                TipoDocumento.CC, DOCUMENTO, "Ana", "Gomez",
+                LocalDate.now().minusYears(30), "3001234567", "ANA@BANCO.COM", PASSWORD);
+        when(clienteRepository.existsByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO)).thenReturn(false);
+        when(clienteRepository.existsByEmail(EMAIL)).thenReturn(true);
+
+        // Act & Assert
+        assertThatThrownBy(() -> clienteService.registrarCliente(request))
+                .isInstanceOf(ClienteYaExisteException.class);
+
+        verify(clienteRepository, never()).save(any());
     }
 
     @Test
