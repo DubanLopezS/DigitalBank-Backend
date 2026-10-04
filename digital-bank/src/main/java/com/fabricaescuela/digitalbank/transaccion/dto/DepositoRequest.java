@@ -1,6 +1,6 @@
-package com.fabricaescuela.digitalbank.cuenta.dto;
+package com.fabricaescuela.digitalbank.transaccion.dto;
 
-import com.fabricaescuela.digitalbank.cuenta.entity.OrigenDeposito;
+import com.fabricaescuela.digitalbank.transaccion.entity.OrigenDeposito;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 

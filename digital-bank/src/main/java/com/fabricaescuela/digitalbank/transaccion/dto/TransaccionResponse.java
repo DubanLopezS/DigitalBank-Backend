@@ -1,6 +1,6 @@
-package com.fabricaescuela.digitalbank.cuenta.dto;
+package com.fabricaescuela.digitalbank.transaccion.dto;
 
-import com.fabricaescuela.digitalbank.cuenta.entity.Transaccion;
+import com.fabricaescuela.digitalbank.transaccion.entity.Transaccion;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

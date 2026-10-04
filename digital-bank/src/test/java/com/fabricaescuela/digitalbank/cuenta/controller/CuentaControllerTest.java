@@ -4,13 +4,9 @@ import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
 import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import com.fabricaescuela.digitalbank.cuenta.dto.AperturaCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
-import com.fabricaescuela.digitalbank.cuenta.dto.DepositoRequest;
-import com.fabricaescuela.digitalbank.cuenta.dto.TransaccionResponse;
-import com.fabricaescuela.digitalbank.cuenta.entity.OrigenDeposito;
 import com.fabricaescuela.digitalbank.cuenta.entity.TipoCuenta;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ICuentaService;
-import com.fabricaescuela.digitalbank.cuenta.interfaces.services.IDepositoService;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,7 +28,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("CuentaController - apertura de cuenta y depositos")
+@DisplayName("CuentaController - apertura de cuenta")
 class CuentaControllerTest {
 
     private static final String TOKEN = "jwt.de.prueba";
@@ -43,9 +39,6 @@ class CuentaControllerTest {
 
     @Mock
     private IJwtService jwtService;
-
-    @Mock
-    private IDepositoService depositoService;
 
     @InjectMocks
     private CuentaController cuentaController;
@@ -112,25 +105,6 @@ class CuentaControllerTest {
                 .isInstanceOf(ClienteNoAutorizadoException.class);
 
         verifyNoInteractions(jwtService, cuentaService);
-    }
-
-    @Test
-    @DisplayName("El deposito responde 201 con la transaccion registrada")
-    void elDepositoResponde201() {
-        // Arrange
-        UUID cuentaId = UUID.randomUUID();
-        DepositoRequest request = new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.EFECTIVO);
-        TransaccionResponse esperada = new TransaccionResponse(
-                UUID.randomUUID(), cuentaId, "DEPOSITO", new BigDecimal("50000.00"),
-                BigDecimal.ZERO, new BigDecimal("50000.00"), "EFECTIVO", "COMPLETADA", LocalDateTime.now());
-        when(depositoService.registrarDeposito(cuentaId, request)).thenReturn(esperada);
-
-        // Act
-        ResponseEntity<TransaccionResponse> respuesta = cuentaController.depositar(cuentaId, request);
-
-        // Assert
-        assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(respuesta.getBody()).isEqualTo(esperada);
     }
 
     private AperturaCuentaRequest aperturaRequest() {

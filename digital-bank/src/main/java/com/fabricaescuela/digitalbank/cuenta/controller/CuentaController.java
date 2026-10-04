@@ -3,16 +3,12 @@ package com.fabricaescuela.digitalbank.cuenta.controller;
 import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import com.fabricaescuela.digitalbank.cuenta.dto.AperturaCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
-import com.fabricaescuela.digitalbank.cuenta.dto.DepositoRequest;
-import com.fabricaescuela.digitalbank.cuenta.dto.TransaccionResponse;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ICuentaService;
-import com.fabricaescuela.digitalbank.cuenta.interfaces.services.IDepositoService;
 
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -25,12 +21,10 @@ public class CuentaController {
 
     private final ICuentaService cuentaService;
     private final IJwtService jwtService;
-    private final IDepositoService depositoService;
 
-    public CuentaController(ICuentaService cuentaService, IJwtService jwtService, IDepositoService depositoService) {
+    public CuentaController(ICuentaService cuentaService, IJwtService jwtService) {
         this.cuentaService = cuentaService;
         this.jwtService = jwtService;
-        this.depositoService = depositoService;
     }
 
     @PostMapping
@@ -40,14 +34,6 @@ public class CuentaController {
 
         UUID clienteIdAutenticado = extraerClienteId(authorizationHeader);
         CuentaResponse response = cuentaService.abrirCuenta(request, clienteIdAutenticado);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    @PreAuthorize("hasAnyRole('ADMIN','CAJERO')")
-    @PostMapping("/{cuentaId}/depositos")
-    public ResponseEntity<TransaccionResponse> depositar(@PathVariable UUID cuentaId,
-                                                            @Valid @RequestBody DepositoRequest request) {
-        TransaccionResponse response = depositoService.registrarDeposito(cuentaId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

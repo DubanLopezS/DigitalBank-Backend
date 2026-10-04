@@ -2,6 +2,7 @@ package com.fabricaescuela.digitalbank.cliente.service;
 
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteRegistroRequest;
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteResponse;
+import com.fabricaescuela.digitalbank.cliente.dto.ClienteResumenResponse;
 import com.fabricaescuela.digitalbank.cliente.entity.Cliente;
 import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
 import com.fabricaescuela.digitalbank.cliente.exception.ClienteMenorDeEdadException;
@@ -14,6 +15,7 @@ import com.fabricaescuela.digitalbank.auth.interfaces.services.ICredencialesServ
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.Optional;
 
 @Service
 public class ClienteServiceImpl implements IClienteService {
@@ -53,6 +55,13 @@ public class ClienteServiceImpl implements IClienteService {
         );
 
         return ClienteResponse.from(clienteGuardado);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<ClienteResumenResponse> obtenerResumenPorDocumento(TipoDocumento tipoDocumento, String numeroDocumento) {
+        return clienteRepository.findByTipoDocumentoAndNumeroDocumento(tipoDocumento, numeroDocumento)
+                .map(ClienteResumenResponse::from);
     }
 
     private void validarDocumentoUnico(TipoDocumento tipoDocumento, String numeroDocumento) {

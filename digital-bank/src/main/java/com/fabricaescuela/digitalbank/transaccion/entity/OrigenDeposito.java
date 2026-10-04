@@ -1,4 +1,4 @@
-package com.fabricaescuela.digitalbank.cuenta.entity;
+package com.fabricaescuela.digitalbank.transaccion.entity;
 
 public enum OrigenDeposito {
     EFECTIVO, CHEQUE, OTRO

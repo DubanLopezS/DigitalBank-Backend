@@ -1,4 +1,4 @@
-package com.fabricaescuela.digitalbank.cuenta.entity;
+package com.fabricaescuela.digitalbank.transaccion.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;

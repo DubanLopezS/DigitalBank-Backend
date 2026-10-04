@@ -1,4 +1,4 @@
-package com.fabricaescuela.digitalbank.cuenta.entity;
+package com.fabricaescuela.digitalbank.transaccion.entity;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
