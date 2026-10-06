@@ -1,14 +1,16 @@
 package com.fabricaescuela.digitalbank.cuenta.service;
 
-import com.fabricaescuela.digitalbank.cliente.entity.Cliente;
-import com.fabricaescuela.digitalbank.cliente.entity.EstadoCliente;
-import com.fabricaescuela.digitalbank.cliente.interfaces.repositories.IClienteRepository;
+import com.fabricaescuela.digitalbank.cliente.dto.ClienteResumenResponse;
+import com.fabricaescuela.digitalbank.cliente.interfaces.services.IClienteService;
 import com.fabricaescuela.digitalbank.cuenta.dto.AperturaCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
+import com.fabricaescuela.digitalbank.cuenta.dto.MovimientoSaldoResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoEncontradoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoHabilitadoException;
+import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoDisponibleException;
+import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoEncontradaException;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ICuentaRepository;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ICuentaService;
 import org.springframework.stereotype.Service;
@@ -23,14 +25,14 @@ import java.util.UUID;
 public class CuentaServiceImpl implements ICuentaService {
 
     private final ICuentaRepository cuentaRepository;
-    private final IClienteRepository clienteRepository;
+    private final IClienteService clienteService;
     private final GeneradorNumeroCuenta generadorNumeroCuenta;
 
     public CuentaServiceImpl(ICuentaRepository cuentaRepository,
-                            IClienteRepository clienteRepository,
+                            IClienteService clienteService,
                             GeneradorNumeroCuenta generadorNumeroCuenta) {
         this.cuentaRepository = cuentaRepository;
-        this.clienteRepository = clienteRepository;
+        this.clienteService = clienteService;
         this.generadorNumeroCuenta = generadorNumeroCuenta;
     }
 
@@ -38,15 +40,15 @@ public class CuentaServiceImpl implements ICuentaService {
     @Transactional
     public CuentaResponse abrirCuenta(AperturaCuentaRequest request, UUID clienteIdAutenticado) {
 
-        Cliente cliente = clienteRepository
-                .findByTipoDocumentoAndNumeroDocumento(request.tipoDocumento(), request.numeroDocumento().trim())
+        ClienteResumenResponse cliente = clienteService
+                .obtenerResumenPorDocumento(request.tipoDocumento(), request.numeroDocumento().trim())
                 .orElseThrow(() -> new ClienteNoEncontradoException("Cliente no encontrado"));
 
-        if (!Objects.equals(clienteIdAutenticado, cliente.getId())) {
+        if (!Objects.equals(clienteIdAutenticado, cliente.id())) {
             throw new ClienteNoAutorizadoException();
         }
 
-        if (cliente.getEstado() != EstadoCliente.ACTIVO) {
+        if (!cliente.activo()) {
             throw new ClienteNoHabilitadoException("Cliente no habilitado");
         }
 
@@ -54,12 +56,37 @@ public class CuentaServiceImpl implements ICuentaService {
                 .setScale(2, RoundingMode.HALF_UP);
 
         Cuenta cuenta = new Cuenta(
-                cliente.getId(),
+                cliente.id(),
                 generadorNumeroCuenta.generar(),
                 request.tipoCuenta(),
                 saldoInicial
         );
 
         return CuentaResponse.from(cuentaRepository.save(cuenta));
+    }
+
+    @Override
+    @Transactional
+    public MovimientoSaldoResponse acreditar(UUID cuentaId, BigDecimal monto) {
+        Cuenta cuenta = cuentaRepository.findById(cuentaId)
+                .orElseThrow(CuentaNoEncontradaException::new);
+
+        validarCuentaDisponible(cuenta);
+
+        BigDecimal saldoAnterior = cuenta.getSaldoContable();
+        cuenta.acreditar(monto);
+        Cuenta cuentaActualizada = cuentaRepository.save(cuenta);
+
+        return new MovimientoSaldoResponse(
+                cuentaActualizada.getId(),
+                saldoAnterior,
+                cuentaActualizada.getSaldoContable()
+        );
+    }
+
+    private void validarCuentaDisponible(Cuenta cuenta) {
+        if (cuenta.estaCerrada()) {
+            throw new CuentaNoDisponibleException("Cuenta no disponible");
+        }
     }
 }

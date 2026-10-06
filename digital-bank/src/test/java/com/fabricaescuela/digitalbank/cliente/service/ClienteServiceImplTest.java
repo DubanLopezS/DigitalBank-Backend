@@ -3,7 +3,9 @@ package com.fabricaescuela.digitalbank.cliente.service;
 import com.fabricaescuela.digitalbank.auth.interfaces.services.ICredencialesService;
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteRegistroRequest;
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteResponse;
+import com.fabricaescuela.digitalbank.cliente.dto.ClienteResumenResponse;
 import com.fabricaescuela.digitalbank.cliente.entity.Cliente;
+import com.fabricaescuela.digitalbank.cliente.entity.EstadoCliente;
 import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
 import com.fabricaescuela.digitalbank.cliente.exception.ClienteMenorDeEdadException;
 import com.fabricaescuela.digitalbank.cliente.exception.ClienteYaExisteException;
@@ -18,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -174,6 +177,59 @@ class ClienteServiceImplTest {
                 .isInstanceOf(ClienteMenorDeEdadException.class);
 
         verify(clienteRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("El resumen de un cliente ACTIVO expone su id y lo marca como activo")
+    void resumenDeClienteActivo() {
+        // Arrange
+        UUID clienteId = UUID.randomUUID();
+        when(clienteRepository.findByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO))
+                .thenReturn(Optional.of(clienteConEstado(clienteId, EstadoCliente.ACTIVO)));
+
+        // Act
+        Optional<ClienteResumenResponse> resumen = clienteService.obtenerResumenPorDocumento(TipoDocumento.CC, DOCUMENTO);
+
+        // Assert
+        assertThat(resumen).contains(new ClienteResumenResponse(clienteId, true));
+    }
+
+    @Test
+    @DisplayName("El resumen de un cliente INACTIVO lo marca como no activo")
+    void resumenDeClienteInactivo() {
+        // Arrange
+        UUID clienteId = UUID.randomUUID();
+        when(clienteRepository.findByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO))
+                .thenReturn(Optional.of(clienteConEstado(clienteId, EstadoCliente.INACTIVO)));
+
+        // Act
+        Optional<ClienteResumenResponse> resumen = clienteService.obtenerResumenPorDocumento(TipoDocumento.CC, DOCUMENTO);
+
+        // Assert
+        assertThat(resumen).contains(new ClienteResumenResponse(clienteId, false));
+    }
+
+    @Test
+    @DisplayName("Un documento no registrado devuelve un resumen vacio")
+    void resumenDeDocumentoNoRegistradoEsVacio() {
+        // Arrange
+        when(clienteRepository.findByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO))
+                .thenReturn(Optional.empty());
+
+        // Act
+        Optional<ClienteResumenResponse> resumen = clienteService.obtenerResumenPorDocumento(TipoDocumento.CC, DOCUMENTO);
+
+        // Assert
+        assertThat(resumen).isEmpty();
+    }
+
+    private Cliente clienteConEstado(UUID id, EstadoCliente estado) {
+        Cliente cliente = new Cliente(
+                TipoDocumento.CC, DOCUMENTO, "Ana", "Gomez",
+                LocalDate.now().minusYears(30), "3001234567", EMAIL);
+        ReflectionTestUtils.setField(cliente, "id", id);
+        ReflectionTestUtils.setField(cliente, "estado", estado);
+        return cliente;
     }
 
     private ClienteRegistroRequest request(LocalDate fechaNacimiento) {
