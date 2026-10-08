@@ -114,4 +114,47 @@ class CuentaTest {
         // Assert
         assertThat(cerrada).isTrue();
     }
+
+    @Test
+    @DisplayName("Debitar resta el monto del saldo contable")
+    void debitarRestaDelSaldoContable() {
+        // Arrange
+        Cuenta cuenta = new Cuenta(UUID.randomUUID(), NUMERO, TipoCuenta.AHORROS, new BigDecimal("100000.00"));
+
+        // Act
+        cuenta.debitar(new BigDecimal("30000.00"));
+
+        // Assert
+        assertThat(cuenta.getSaldoContable()).isEqualByComparingTo(new BigDecimal("70000.00"));
+    }
+
+    @Test
+    @DisplayName("El saldo disponible es el saldo contable menos la retencion")
+    void saldoDisponibleDescuentaLaRetencion() {
+        // Arrange
+        Cuenta cuenta = new Cuenta(UUID.randomUUID(), NUMERO, TipoCuenta.AHORROS, new BigDecimal("1000.00"));
+        ReflectionTestUtils.setField(cuenta, "retencion", new BigDecimal("300.00"));
+
+        // Act
+        BigDecimal disponible = cuenta.getSaldoDisponible();
+
+        // Assert
+        assertThat(disponible).isEqualByComparingTo(new BigDecimal("700.00"));
+    }
+
+    @Test
+    @DisplayName("Solo una cuenta en estado ACTIVA se reporta como activa")
+    void soloLaCuentaActivaEstaActiva() {
+        // Arrange
+        Cuenta activa = new Cuenta(UUID.randomUUID(), NUMERO, TipoCuenta.AHORROS);
+        Cuenta bloqueada = new Cuenta(UUID.randomUUID(), NUMERO, TipoCuenta.AHORROS);
+        Cuenta cerrada = new Cuenta(UUID.randomUUID(), NUMERO, TipoCuenta.AHORROS);
+        ReflectionTestUtils.setField(bloqueada, "estado", EstadoCuenta.BLOQUEADA);
+        ReflectionTestUtils.setField(cerrada, "estado", EstadoCuenta.CERRADA);
+
+        // Act & Assert
+        assertThat(activa.estaActiva()).isTrue();
+        assertThat(bloqueada.estaActiva()).isFalse();
+        assertThat(cerrada.estaActiva()).isFalse();
+    }
 }

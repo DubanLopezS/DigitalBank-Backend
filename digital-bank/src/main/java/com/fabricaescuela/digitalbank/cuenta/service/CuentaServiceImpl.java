@@ -2,6 +2,7 @@ package com.fabricaescuela.digitalbank.cuenta.service;
 
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteResumenResponse;
 import com.fabricaescuela.digitalbank.cliente.interfaces.services.IClienteService;
+import com.fabricaescuela.digitalbank.core.exception.AccesoNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.dto.AperturaCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
 import com.fabricaescuela.digitalbank.cuenta.dto.MovimientoSaldoResponse;
@@ -11,6 +12,7 @@ import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoEncontradoExcept
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoHabilitadoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoDisponibleException;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoEncontradaException;
+import com.fabricaescuela.digitalbank.cuenta.exception.SaldoInsuficienteException;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ICuentaRepository;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ICuentaService;
 import org.springframework.stereotype.Service;
@@ -68,7 +70,9 @@ public class CuentaServiceImpl implements ICuentaService {
     @Override
     @Transactional
     public MovimientoSaldoResponse acreditar(UUID cuentaId, BigDecimal monto) {
-        Cuenta cuenta = cuentaRepository.findById(cuentaId)
+        validarMonto(monto);
+
+        Cuenta cuenta = cuentaRepository.findByIdForUpdate(cuentaId)
                 .orElseThrow(CuentaNoEncontradaException::new);
 
         validarCuentaDisponible(cuenta);
@@ -84,9 +88,53 @@ public class CuentaServiceImpl implements ICuentaService {
         );
     }
 
+    @Override
+    @Transactional
+    public MovimientoSaldoResponse debitar(UUID cuentaId, BigDecimal monto) {
+        validarMonto(monto);
+
+        Cuenta cuenta = cuentaRepository.findByIdForUpdate(cuentaId)
+                .orElseThrow(CuentaNoEncontradaException::new);
+
+        if (!cuenta.estaActiva()) {
+            throw new CuentaNoDisponibleException("Cuenta no disponible");
+        }
+
+        if (cuenta.getSaldoDisponible().compareTo(monto) < 0) {
+            throw new SaldoInsuficienteException();
+        }
+
+        BigDecimal saldoAnterior = cuenta.getSaldoContable();
+        cuenta.debitar(monto);
+        Cuenta cuentaActualizada = cuentaRepository.save(cuenta);
+
+        return new MovimientoSaldoResponse(
+                cuentaActualizada.getId(),
+                saldoAnterior,
+                cuentaActualizada.getSaldoContable()
+        );
+    }
+
+    @Override
+    @Transactional
+    public void validarTitularidad(UUID cuentaId, UUID clienteId) {
+        Cuenta cuenta = cuentaRepository.findById(cuentaId)
+                .orElseThrow(AccesoNoAutorizadoException::new);
+
+        if (!Objects.equals(clienteId, cuenta.getClienteId())) {
+            throw new AccesoNoAutorizadoException();
+        }
+    }
+
     private void validarCuentaDisponible(Cuenta cuenta) {
         if (cuenta.estaCerrada()) {
             throw new CuentaNoDisponibleException("Cuenta no disponible");
+        }
+    }
+
+    private void validarMonto(BigDecimal monto) {
+        if (monto == null || monto.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Monto inválido");
         }
     }
 }

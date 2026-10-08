@@ -11,4 +11,8 @@ public interface ICuentaService {
     CuentaResponse abrirCuenta(AperturaCuentaRequest request, UUID clienteIdAutenticado);
 
     MovimientoSaldoResponse acreditar(UUID cuentaId, BigDecimal monto);
+
+    MovimientoSaldoResponse debitar(UUID cuentaId, BigDecimal monto);
+
+    void validarTitularidad(UUID cuentaId, UUID clienteId);
 }

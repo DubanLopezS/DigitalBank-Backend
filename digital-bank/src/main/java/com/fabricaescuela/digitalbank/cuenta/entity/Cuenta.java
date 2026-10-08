@@ -56,8 +56,16 @@ public class Cuenta {
         return estado == EstadoCuenta.CERRADA;
     }
 
+    public boolean estaActiva() {
+        return estado == EstadoCuenta.ACTIVA;
+    }
+
     public void acreditar(BigDecimal monto) {
         this.saldoContable = this.saldoContable.add(monto);
+    }
+
+    public void debitar(BigDecimal monto) {
+        this.saldoContable = this.saldoContable.subtract(monto);
     }
 
     public UUID getId() { return id; }
@@ -66,6 +74,7 @@ public class Cuenta {
     public TipoCuenta getTipoCuenta() { return tipoCuenta; }
     public BigDecimal getSaldoContable() { return saldoContable; }
     public BigDecimal getRetencion() { return retencion; }
+    public BigDecimal getSaldoDisponible() { return saldoContable.subtract(retencion); }
     public EstadoCuenta getEstado() { return estado; }
     public LocalDateTime getFechaApertura() { return fechaApertura; }
 }
