@@ -50,4 +50,20 @@ class TransaccionTest {
         // Assert
         assertThat(transaccion.getOrigen()).isEqualTo(OrigenDeposito.CHEQUE);
     }
+
+    @Test
+    @DisplayName("Un deposito no pertenece a ninguna transferencia")
+    void depositoNoTieneTransferenciaId() {
+        // Arrange
+        UUID cuentaId = UUID.randomUUID();
+
+        // Act
+        Transaccion transaccion = Transaccion.deposito(
+                cuentaId, BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.TEN, OrigenDeposito.EFECTIVO);
+
+        // Assert
+        assertThat(transaccion.getTransferenciaId()).isNull();
+        assertThat(transaccion.getSentido()).isNull();
+        assertThat(transaccion.getDescripcion()).isNull();
+    }
 }

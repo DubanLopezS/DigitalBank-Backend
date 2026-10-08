@@ -11,6 +11,8 @@ public interface ICuentaRepository {
 
     Optional<Cuenta> findById(UUID id);
 
+    Optional<Cuenta> findByIdForUpdate(UUID id);
+
     Optional<Cuenta> findByNumeroCuenta(String numeroCuenta);
 
     boolean existsByNumeroCuenta(String numeroCuenta);

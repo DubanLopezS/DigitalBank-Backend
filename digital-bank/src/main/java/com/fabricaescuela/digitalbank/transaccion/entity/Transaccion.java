@@ -40,6 +40,16 @@ public class Transaccion {
     @Column(name = "fecha_hora", nullable = false)
     private LocalDateTime fechaHora = LocalDateTime.now();
 
+    @Column(name = "transferencia_id")
+    private UUID transferenciaId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private SentidoTransferencia sentido;
+
+    @Column(length = 255)
+    private String descripcion;
+
     protected Transaccion() {}
 
     public static Transaccion deposito(UUID cuentaId, BigDecimal monto, BigDecimal saldoAnterior,
@@ -63,4 +73,7 @@ public class Transaccion {
     public OrigenDeposito getOrigen() { return origen; }
     public EstadoTransaccion getEstado() { return estado; }
     public LocalDateTime getFechaHora() { return fechaHora; }
+    public UUID getTransferenciaId() { return transferenciaId; }
+    public SentidoTransferencia getSentido() { return sentido; }
+    public String getDescripcion() { return descripcion; }
 }
