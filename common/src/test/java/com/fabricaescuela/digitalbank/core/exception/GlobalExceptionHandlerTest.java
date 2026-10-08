@@ -1,7 +1,6 @@
 package com.fabricaescuela.digitalbank.core.exception;
 
-import com.fabricaescuela.digitalbank.cliente.exception.ClienteMenorDeEdadException;
-import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoEncontradaException;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
@@ -26,6 +25,19 @@ class GlobalExceptionHandlerTest {
 
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
+    /** Excepciones de prueba: common no puede depender de los módulos de negocio. */
+    static class NoEncontradaDePrueba extends ApiException {
+        NoEncontradaDePrueba() {
+            super(HttpStatus.NOT_FOUND, "Cuenta no encontrada");
+        }
+    }
+
+    static class MenorDeEdadDePrueba extends ApiException {
+        MenorDeEdadDePrueba() {
+            super(HttpStatus.BAD_REQUEST, "El cliente debe ser mayor de edad");
+        }
+    }
+
     @Test
     @DisplayName("Una ApiException conserva su estado y su mensaje de negocio")
     void apiExceptionConservaEstadoYMensaje() {
@@ -34,7 +46,7 @@ class GlobalExceptionHandlerTest {
 
         // Act
         ResponseEntity<Map<String, Object>> respuesta =
-                handler.handleApiException(new CuentaNoEncontradaException(), request);
+                handler.handleApiException(new NoEncontradaDePrueba(), request);
 
         // Assert
         assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
@@ -53,8 +65,8 @@ class GlobalExceptionHandlerTest {
         MockHttpServletRequest request = peticion("/api/clientes");
 
         // Act
-        ResponseEntity<Map<String, Object>> respuesta = handler.handleApiException(
-                new ClienteMenorDeEdadException("El cliente debe ser mayor de edad"), request);
+        ResponseEntity<Map<String, Object>> respuesta =
+                handler.handleApiException(new MenorDeEdadDePrueba(), request);
 
         // Assert
         assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
