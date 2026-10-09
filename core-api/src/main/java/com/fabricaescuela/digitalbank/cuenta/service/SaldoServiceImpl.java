@@ -1,6 +1,5 @@
 package com.fabricaescuela.digitalbank.cuenta.service;
 
-import com.fabricaescuela.digitalbank.auth.interfaces.services.IUsuarioQueryService;
 import com.fabricaescuela.digitalbank.core.exception.AccesoNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.dto.SaldoResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
@@ -20,16 +19,14 @@ public class SaldoServiceImpl implements ISaldoService {
     private static final String ROL_CAJERO = "CAJERO";
 
     private final ICuentaRepository cuentaRepository;
-    private final IUsuarioQueryService usuarioQueryService;
 
-    public SaldoServiceImpl(ICuentaRepository cuentaRepository, IUsuarioQueryService usuarioQueryService) {
+    public SaldoServiceImpl(ICuentaRepository cuentaRepository) {
         this.cuentaRepository = cuentaRepository;
-        this.usuarioQueryService = usuarioQueryService;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public SaldoResponse consultarSaldo(String numeroCuenta, UUID usuarioId, String rol) {
+    public SaldoResponse consultarSaldo(String numeroCuenta, UUID clienteId, String rol) {
         boolean esPersonalAutorizado = ROL_ADMIN.equals(rol) || ROL_CAJERO.equals(rol);
 
         Cuenta cuenta = cuentaRepository.findByNumeroCuenta(numeroCuenta)
@@ -38,7 +35,7 @@ public class SaldoServiceImpl implements ISaldoService {
                         : new AccesoNoAutorizadoException());
 
         if (!esPersonalAutorizado) {
-            validarTitularidad(cuenta, usuarioId);
+            validarTitularidad(cuenta, clienteId);
         }
 
         BigDecimal saldoDisponible = cuenta.getSaldoContable().subtract(cuenta.getRetencion());
@@ -46,11 +43,8 @@ public class SaldoServiceImpl implements ISaldoService {
         return new SaldoResponse(cuenta.getNumeroCuenta(), cuenta.getSaldoContable(), saldoDisponible);
     }
 
-    private void validarTitularidad(Cuenta cuenta, UUID usuarioId) {
-        UUID clienteId = usuarioQueryService.obtenerClienteId(usuarioId)
-                .orElseThrow(AccesoNoAutorizadoException::new);
-
-        if (!clienteId.equals(cuenta.getClienteId())) {
+    private void validarTitularidad(Cuenta cuenta, UUID clienteId) {
+        if (clienteId == null || !clienteId.equals(cuenta.getClienteId())) {
             throw new AccesoNoAutorizadoException();
         }
     }

@@ -26,10 +26,10 @@ public class SaldoController {
     @GetMapping("/{numeroCuenta}/saldo")
     public ResponseEntity<SaldoResponse> consultarSaldo(@PathVariable String numeroCuenta,
                                                         Authentication authentication) {
-        UUID usuarioId = (UUID) authentication.getPrincipal();
+        UUID clienteId = (UUID) authentication.getDetails();
         String rol = obtenerRol(authentication);
 
-        SaldoResponse response = saldoService.consultarSaldo(numeroCuenta, usuarioId, rol);
+        SaldoResponse response = saldoService.consultarSaldo(numeroCuenta, clienteId, rol);
         return ResponseEntity.ok(response);
     }
 

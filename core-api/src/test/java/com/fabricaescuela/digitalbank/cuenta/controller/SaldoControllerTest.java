@@ -48,16 +48,13 @@ class SaldoControllerTest {
     @Test
     @DisplayName("La consulta responde 200 con el saldo de la cuenta")
     void laConsultaResponde200ConElSaldo() {
-        // Arrange
         SaldoResponse esperado = new SaldoResponse(
                 NUMERO_CUENTA, new BigDecimal("200000.00"), new BigDecimal("170000.00"));
         when(saldoService.consultarSaldo(anyString(), any(UUID.class), anyString())).thenReturn(esperado);
 
-        // Act
-        ResponseEntity<SaldoResponse> respuesta =
-                saldoController.consultarSaldo(NUMERO_CUENTA, autenticacion(UUID.randomUUID(), "ROLE_CLIENTE"));
+        ResponseEntity<SaldoResponse> respuesta = saldoController.consultarSaldo(
+                NUMERO_CUENTA, autenticacion(UUID.randomUUID(), UUID.randomUUID(), "ROLE_CLIENTE"));
 
-        // Assert
         assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(respuesta.getBody()).isEqualTo(esperado);
     }
@@ -65,46 +62,40 @@ class SaldoControllerTest {
     @Test
     @DisplayName("El prefijo ROLE_ se elimina antes de delegar al servicio")
     void elPrefijoRoleSeEliminaAntesDeDelegar() {
-        // Arrange
-        UUID usuarioId = UUID.randomUUID();
-        Authentication autenticacion = autenticacion(usuarioId, "ROLE_CAJERO");
+        UUID clienteId = UUID.randomUUID();
+        Authentication autenticacion = autenticacion(UUID.randomUUID(), clienteId, "ROLE_CAJERO");
 
-        // Act
         saldoController.consultarSaldo(NUMERO_CUENTA, autenticacion);
 
-        // Assert
         verify(saldoService).consultarSaldo(anyString(), any(UUID.class), rolCaptor.capture());
         assertThat(rolCaptor.getValue()).isEqualTo("CAJERO");
     }
 
     @Test
-    @DisplayName("El id de usuario se toma del principal autenticado")
-    void elIdDeUsuarioSeTomaDelPrincipal() {
-        // Arrange
-        UUID usuarioId = UUID.randomUUID();
+    @DisplayName("El clienteId se toma de los detalles de la autenticacion")
+    void elClienteIdSeTomaDeLosDetalles() {
+        UUID clienteId = UUID.randomUUID();
 
-        // Act
-        saldoController.consultarSaldo(NUMERO_CUENTA, autenticacion(usuarioId, "ROLE_ADMIN"));
+        saldoController.consultarSaldo(NUMERO_CUENTA, autenticacion(UUID.randomUUID(), clienteId, "ROLE_CLIENTE"));
 
-        // Assert
-        verify(saldoService).consultarSaldo(NUMERO_CUENTA, usuarioId, "ADMIN");
+        verify(saldoService).consultarSaldo(NUMERO_CUENTA, clienteId, "CLIENTE");
     }
 
     @Test
     @DisplayName("Una autenticacion sin roles no llega a consultar el saldo")
     void autenticacionSinRolesNoConsultaElSaldo() {
-        // Arrange
         Authentication sinRoles = new UsernamePasswordAuthenticationToken(UUID.randomUUID(), null, List.of());
 
-        // Act & Assert
         assertThatThrownBy(() -> saldoController.consultarSaldo(NUMERO_CUENTA, sinRoles))
                 .isInstanceOf(NoSuchElementException.class);
 
         verifyNoInteractions(saldoService);
     }
 
-    private Authentication autenticacion(UUID usuarioId, String authority) {
-        return new UsernamePasswordAuthenticationToken(
+    private Authentication autenticacion(UUID usuarioId, UUID clienteId, String authority) {
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
                 usuarioId, null, List.of(new SimpleGrantedAuthority(authority)));
+        token.setDetails(clienteId);
+        return token;
     }
 }

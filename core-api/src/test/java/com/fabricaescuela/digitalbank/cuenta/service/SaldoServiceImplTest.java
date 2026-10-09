@@ -1,6 +1,5 @@
 package com.fabricaescuela.digitalbank.cuenta.service;
 
-import com.fabricaescuela.digitalbank.auth.interfaces.services.IUsuarioQueryService;
 import com.fabricaescuela.digitalbank.core.exception.AccesoNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.dto.SaldoResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
@@ -22,7 +21,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,15 +28,11 @@ import static org.mockito.Mockito.when;
 class SaldoServiceImplTest {
 
     private static final String NUMERO_CUENTA = "1234567890";
-    private static final UUID USUARIO_ID = UUID.randomUUID();
     private static final UUID CLIENTE_TITULAR = UUID.randomUUID();
     private static final UUID OTRO_CLIENTE = UUID.randomUUID();
 
     @Mock
     private ICuentaRepository cuentaRepository;
-
-    @Mock
-    private IUsuarioQueryService usuarioQueryService;
 
     @InjectMocks
     private SaldoServiceImpl saldoService;
@@ -51,7 +45,7 @@ class SaldoServiceImplTest {
         when(cuentaRepository.findByNumeroCuenta(NUMERO_CUENTA)).thenReturn(Optional.of(cuenta));
 
         // Act
-        SaldoResponse response = saldoService.consultarSaldo(NUMERO_CUENTA, USUARIO_ID, "ADMIN");
+        SaldoResponse response = saldoService.consultarSaldo(NUMERO_CUENTA, null, "ADMIN");
 
         // Assert
         assertThat(response.numeroCuenta()).isEqualTo(NUMERO_CUENTA);
@@ -67,11 +61,10 @@ class SaldoServiceImplTest {
         when(cuentaRepository.findByNumeroCuenta(NUMERO_CUENTA)).thenReturn(Optional.of(cuenta));
 
         // Act
-        SaldoResponse response = saldoService.consultarSaldo(NUMERO_CUENTA, USUARIO_ID, "ADMIN");
+        SaldoResponse response = saldoService.consultarSaldo(NUMERO_CUENTA, null, "ADMIN");
 
         // Assert
         assertThat(response.saldoDisponible()).isEqualByComparingTo(new BigDecimal("50000.00"));
-        verifyNoInteractions(usuarioQueryService);
     }
 
     @Test
@@ -82,11 +75,10 @@ class SaldoServiceImplTest {
         when(cuentaRepository.findByNumeroCuenta(NUMERO_CUENTA)).thenReturn(Optional.of(cuenta));
 
         // Act
-        SaldoResponse response = saldoService.consultarSaldo(NUMERO_CUENTA, USUARIO_ID, "CAJERO");
+        SaldoResponse response = saldoService.consultarSaldo(NUMERO_CUENTA, null, "CAJERO");
 
         // Assert
         assertThat(response.saldoContable()).isEqualByComparingTo(new BigDecimal("50000.00"));
-        verifyNoInteractions(usuarioQueryService);
     }
 
     @Test
@@ -95,10 +87,9 @@ class SaldoServiceImplTest {
         // Arrange
         Cuenta cuenta = cuenta(new BigDecimal("75000.00"), new BigDecimal("5000.00"), CLIENTE_TITULAR);
         when(cuentaRepository.findByNumeroCuenta(NUMERO_CUENTA)).thenReturn(Optional.of(cuenta));
-        when(usuarioQueryService.obtenerClienteId(USUARIO_ID)).thenReturn(Optional.of(CLIENTE_TITULAR));
 
         // Act
-        SaldoResponse response = saldoService.consultarSaldo(NUMERO_CUENTA, USUARIO_ID, "CLIENTE");
+        SaldoResponse response = saldoService.consultarSaldo(NUMERO_CUENTA, CLIENTE_TITULAR, "CLIENTE");
 
         // Assert
         assertThat(response.saldoDisponible()).isEqualByComparingTo(new BigDecimal("70000.00"));
@@ -110,10 +101,9 @@ class SaldoServiceImplTest {
         // Arrange
         Cuenta cuenta = cuenta(new BigDecimal("75000.00"), BigDecimal.ZERO, OTRO_CLIENTE);
         when(cuentaRepository.findByNumeroCuenta(NUMERO_CUENTA)).thenReturn(Optional.of(cuenta));
-        when(usuarioQueryService.obtenerClienteId(USUARIO_ID)).thenReturn(Optional.of(CLIENTE_TITULAR));
 
         // Act & Assert
-        assertThatThrownBy(() -> saldoService.consultarSaldo(NUMERO_CUENTA, USUARIO_ID, "CLIENTE"))
+        assertThatThrownBy(() -> saldoService.consultarSaldo(NUMERO_CUENTA, CLIENTE_TITULAR, "CLIENTE"))
                 .isInstanceOf(AccesoNoAutorizadoException.class)
                 .hasMessage("Acceso no autorizado")
                 .extracting(ex -> ((AccesoNoAutorizadoException) ex).getStatus())
@@ -126,10 +116,9 @@ class SaldoServiceImplTest {
         // Arrange
         Cuenta cuenta = cuenta(new BigDecimal("75000.00"), BigDecimal.ZERO, CLIENTE_TITULAR);
         when(cuentaRepository.findByNumeroCuenta(NUMERO_CUENTA)).thenReturn(Optional.of(cuenta));
-        when(usuarioQueryService.obtenerClienteId(USUARIO_ID)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThatThrownBy(() -> saldoService.consultarSaldo(NUMERO_CUENTA, USUARIO_ID, "CLIENTE"))
+        assertThatThrownBy(() -> saldoService.consultarSaldo(NUMERO_CUENTA, null, "CLIENTE"))
                 .isInstanceOf(AccesoNoAutorizadoException.class);
     }
 
@@ -140,7 +129,7 @@ class SaldoServiceImplTest {
         when(cuentaRepository.findByNumeroCuenta(NUMERO_CUENTA)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThatThrownBy(() -> saldoService.consultarSaldo(NUMERO_CUENTA, USUARIO_ID, "ADMIN"))
+        assertThatThrownBy(() -> saldoService.consultarSaldo(NUMERO_CUENTA, null, "ADMIN"))
                 .isInstanceOf(CuentaNoEncontradaException.class)
                 .extracting(ex -> ((CuentaNoEncontradaException) ex).getStatus())
                 .isEqualTo(HttpStatus.NOT_FOUND);
@@ -153,10 +142,8 @@ class SaldoServiceImplTest {
         when(cuentaRepository.findByNumeroCuenta(NUMERO_CUENTA)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThatThrownBy(() -> saldoService.consultarSaldo(NUMERO_CUENTA, USUARIO_ID, "CLIENTE"))
+        assertThatThrownBy(() -> saldoService.consultarSaldo(NUMERO_CUENTA, CLIENTE_TITULAR, "CLIENTE"))
                 .isInstanceOf(AccesoNoAutorizadoException.class);
-
-        verifyNoInteractions(usuarioQueryService);
     }
 
     private Cuenta cuenta(BigDecimal saldoContable, BigDecimal retencion, UUID clienteId) {
