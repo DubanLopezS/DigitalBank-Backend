@@ -1,11 +1,9 @@
 package com.fabricaescuela.digitalbank.cuenta.controller;
 
 import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
-import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import com.fabricaescuela.digitalbank.cuenta.dto.AperturaCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.TipoCuenta;
-import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ICuentaService;
 
 import org.junit.jupiter.api.DisplayName;
@@ -16,29 +14,25 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("CuentaController - apertura de cuenta")
 class CuentaControllerTest {
 
-    private static final String TOKEN = "jwt.de.prueba";
-    private static final String CABECERA_VALIDA = "Bearer " + TOKEN;
-
     @Mock
     private ICuentaService cuentaService;
 
     @Mock
-    private IJwtService jwtService;
+    private Authentication authentication;
 
     @InjectMocks
     private CuentaController cuentaController;
@@ -49,12 +43,12 @@ class CuentaControllerTest {
         // Arrange
         UUID clienteId = UUID.randomUUID();
         CuentaResponse esperada = cuentaResponse(clienteId);
-        when(jwtService.extraerClienteId(TOKEN)).thenReturn(clienteId);
+        when(authentication.getDetails()).thenReturn(clienteId);
         when(cuentaService.abrirCuenta(any(AperturaCuentaRequest.class), any(UUID.class))).thenReturn(esperada);
 
         // Act
         ResponseEntity<CuentaResponse> respuesta =
-                cuentaController.abrirCuenta(aperturaRequest(), CABECERA_VALIDA);
+                cuentaController.abrirCuenta(aperturaRequest(), authentication);
 
         // Assert
         assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -62,49 +56,20 @@ class CuentaControllerTest {
     }
 
     @Test
-    @DisplayName("El cliente autenticado se toma del token, no del cuerpo de la peticion")
-    void elClienteAutenticadoSeTomaDelToken() {
+    @DisplayName("El cliente autenticado se toma de la autenticacion, no del cuerpo de la peticion")
+    void elClienteAutenticadoSeTomaDeLaAutenticacion() {
         // Arrange
-        UUID clienteIdDelToken = UUID.randomUUID();
+        UUID clienteIdAutenticado = UUID.randomUUID();
         AperturaCuentaRequest request = aperturaRequest();
-        when(jwtService.extraerClienteId(TOKEN)).thenReturn(clienteIdDelToken);
-        when(cuentaService.abrirCuenta(request, clienteIdDelToken)).thenReturn(cuentaResponse(clienteIdDelToken));
+        when(authentication.getDetails()).thenReturn(clienteIdAutenticado);
+        when(cuentaService.abrirCuenta(request, clienteIdAutenticado)).thenReturn(cuentaResponse(clienteIdAutenticado));
 
         // Act
-        ResponseEntity<CuentaResponse> respuesta = cuentaController.abrirCuenta(request, CABECERA_VALIDA);
+        ResponseEntity<CuentaResponse> respuesta = cuentaController.abrirCuenta(request, authentication);
 
         // Assert: si el controlador usara otro id, el stub no coincidiria y el cuerpo vendria vacio
         assertThat(respuesta.getBody()).isNotNull();
-        assertThat(respuesta.getBody().clienteId()).isEqualTo(clienteIdDelToken);
-    }
-
-    @Test
-    @DisplayName("Sin cabecera Authorization la apertura responde 403")
-    void sinCabeceraLaAperturaResponde403() {
-        // Arrange
-        AperturaCuentaRequest request = aperturaRequest();
-
-        // Act & Assert
-        assertThatThrownBy(() -> cuentaController.abrirCuenta(request, null))
-                .isInstanceOf(ClienteNoAutorizadoException.class)
-                .hasMessage("No puedes abrir cuentas a nombre de otro cliente")
-                .extracting(ex -> ((ClienteNoAutorizadoException) ex).getStatus())
-                .isEqualTo(HttpStatus.FORBIDDEN);
-
-        verifyNoInteractions(jwtService, cuentaService);
-    }
-
-    @Test
-    @DisplayName("Una cabecera con esquema distinto de Bearer responde 403")
-    void cabeceraSinEsquemaBearerResponde403() {
-        // Arrange
-        AperturaCuentaRequest request = aperturaRequest();
-
-        // Act & Assert
-        assertThatThrownBy(() -> cuentaController.abrirCuenta(request, "Basic dXN1YXJpbzpjbGF2ZQ=="))
-                .isInstanceOf(ClienteNoAutorizadoException.class);
-
-        verifyNoInteractions(jwtService, cuentaService);
+        assertThat(respuesta.getBody().clienteId()).isEqualTo(clienteIdAutenticado);
     }
 
     private AperturaCuentaRequest aperturaRequest() {

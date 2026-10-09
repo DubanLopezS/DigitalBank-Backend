@@ -5,7 +5,7 @@ import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
 
 import java.util.Optional;
 
-public interface IClienteService {
+public interface IClienteConsulta {
 
     Optional<ClienteResumenResponse> obtenerResumenPorDocumento(TipoDocumento tipoDocumento, String numeroDocumento);
 }

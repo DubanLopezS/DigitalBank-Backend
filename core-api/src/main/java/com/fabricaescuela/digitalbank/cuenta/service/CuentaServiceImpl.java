@@ -1,7 +1,7 @@
 package com.fabricaescuela.digitalbank.cuenta.service;
 
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteResumenResponse;
-import com.fabricaescuela.digitalbank.cliente.interfaces.services.IClienteService;
+import com.fabricaescuela.digitalbank.cliente.interfaces.services.IClienteConsulta;
 import com.fabricaescuela.digitalbank.core.exception.AccesoNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.dto.AperturaCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
@@ -27,11 +27,11 @@ import java.util.UUID;
 public class CuentaServiceImpl implements ICuentaService {
 
     private final ICuentaRepository cuentaRepository;
-    private final IClienteService clienteService;
+    private final IClienteConsulta clienteService;
     private final GeneradorNumeroCuenta generadorNumeroCuenta;
 
     public CuentaServiceImpl(ICuentaRepository cuentaRepository,
-                            IClienteService clienteService,
+                            IClienteConsulta clienteService,
                             GeneradorNumeroCuenta generadorNumeroCuenta) {
         this.cuentaRepository = cuentaRepository;
         this.clienteService = clienteService;

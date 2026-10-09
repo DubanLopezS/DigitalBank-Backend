@@ -2,7 +2,7 @@ package com.fabricaescuela.digitalbank.cuenta.service;
 
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteResumenResponse;
 import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
-import com.fabricaescuela.digitalbank.cliente.interfaces.services.IClienteService;
+import com.fabricaescuela.digitalbank.cliente.interfaces.services.IClienteConsulta;
 import com.fabricaescuela.digitalbank.core.exception.AccesoNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.dto.AperturaCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
@@ -46,7 +46,7 @@ class CuentaServiceImplTest {
     private ICuentaRepository cuentaRepository;
 
     @Mock
-    private IClienteService clienteService;
+    private IClienteConsulta clienteService;
 
     @Mock
     private GeneradorNumeroCuenta generadorNumeroCuenta;
