@@ -25,7 +25,6 @@ class GlobalExceptionHandlerTest {
 
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
-    /** Excepciones de prueba: common no puede depender de los módulos de negocio. */
     static class NoEncontradaDePrueba extends ApiException {
         NoEncontradaDePrueba() {
             super(HttpStatus.NOT_FOUND, "Cuenta no encontrada");
@@ -132,7 +131,6 @@ class GlobalExceptionHandlerTest {
         return request;
     }
 
-    /** Construye la excepcion tal como la levanta Spring al fallar @Valid. */
     private MethodArgumentNotValidException errorDeValidacion(String campo, String mensaje) throws Exception {
         BindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "request");
         if (campo != null) {
