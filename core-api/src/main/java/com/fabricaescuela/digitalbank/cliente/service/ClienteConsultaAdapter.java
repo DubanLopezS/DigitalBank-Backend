@@ -10,10 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Implementación de solo lectura de IClienteService para core-api.
- * Consulta directamente la tabla cliente (base compartida, ADR 0009).
- */
 @Service
 public class ClienteConsultaAdapter implements IClienteConsulta {
 

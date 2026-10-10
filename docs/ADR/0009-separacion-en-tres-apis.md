@@ -22,15 +22,15 @@ Un solo repositorio (monorepo) con un `pom.xml` padre y cuatro módulos:
 - `auth-api`: módulos `auth` y `cliente`. Es la única que crea tokens. Como `cliente` vive acá, el registro sigue siendo una sola transacción. El nombre no describe todo lo que contiene, pero lo aceptamos.
 - `core-api`: módulos `cuenta` y `transaccion`.
 - `reportes-api`: solo consultas, de solo lectura.
-- `common`: lo que comparten las tres (manejo de excepciones y utilidades).
+- `common`: lo que comparten las tres (Por ahora, manejo de excepciones).
 
 Las tres APIs usan la misma base de Supabase. La única que corre Flyway es `core-api`. `auth-api` y `reportes-api` llevan `spring.flyway.enabled=false`. En el primer despliegue `core-api` arranca primero, porque con `ddl-auto=validate` las otras fallarían si faltan las tablas.
 
 Solo `auth-api` crea tokens (es la única que tiene `generarToken` y la entidad `Usuario`). `core-api` y `reportes-api` validan el token localmente, con el mismo secreto (`JWT_SECRET`) y una versión de solo lectura de `IJwtService`. El token ya trae el id de usuario, el rol y el `clienteId`, así que no hace falta consultar a `auth-api`.
 
-No hay llamadas HTTP entre APIs. Para consultar un cliente por documento al abrir una cuenta, `core-api` implementa `IClienteService` con una consulta de solo lectura a la tabla `cliente` de la base compartida, así `CuentaServiceImpl` no cambia.
+No hay llamadas HTTP entre APIs. Para consultar un cliente por documento al abrir una cuenta, `core-api` implementa `IClienteConsulta` con una consulta de solo lectura a la tabla `cliente` de la base compartida. `CuentaServiceImpl` sigue dependiendo de una interfaz, no de la implementación concreta, así que el cambio de módulo a `core-api` no obligó a tocar su lógica de negocio, solo cambió qué clase implementa esa interfaz.
 
-En Render habrá tres Web Services: el contexto de build es la raíz del repo y cada servicio apunta a su Dockerfile (`auth-api/Dockerfile`, etc.). Cada servicio replica las variables de Supabase y los reintentos de Flyway.
+En Render habrá un Web Service por API desplegada: el contexto de build es la raíz del repo y cada uno apunta a su propio Dockerfile. Por ahora solo se despliegan auth-api y core-api, reportes-api queda sin desplegar hasta tener lógica propia. Cada servicio repite las variables de conexión a Supabase y comparte el mismo JWT_SECRET. core-api, al ser la única con Flyway activo.
 
 ## Qué implica esto
 
