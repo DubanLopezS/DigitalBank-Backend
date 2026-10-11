@@ -25,7 +25,7 @@ public record TransaccionResponse(
                 transaccion.getMonto(),
                 transaccion.getSaldoAnterior(),
                 transaccion.getSaldoNuevo(),
-                transaccion.getOrigen().name(),
+                transaccion.getOrigen() != null ? transaccion.getOrigen().name() : null,
                 transaccion.getEstado().name(),
                 transaccion.getFechaHora()
         );

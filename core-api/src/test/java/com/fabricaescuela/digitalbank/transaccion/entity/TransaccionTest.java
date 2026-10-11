@@ -9,7 +9,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("Transaccion - creacion de un deposito")
+@DisplayName("Transaccion - creacion de depositos y retiros")
 class TransaccionTest {
 
     @Test
@@ -62,6 +62,45 @@ class TransaccionTest {
                 cuentaId, BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.TEN, OrigenDeposito.EFECTIVO);
 
         // Assert
+        assertThat(transaccion.getTransferenciaId()).isNull();
+        assertThat(transaccion.getSentido()).isNull();
+        assertThat(transaccion.getDescripcion()).isNull();
+    }
+
+    @Test
+    @DisplayName("Un retiro queda COMPLETADO, tipado como RETIRO y con el rastro de saldos")
+    void retiroQuedaCompletadoConElRastroDeSaldos() {
+        // Arrange
+        UUID cuentaId = UUID.randomUUID();
+        BigDecimal monto = new BigDecimal("30000.00");
+        BigDecimal saldoAnterior = new BigDecimal("100000.00");
+        BigDecimal saldoNuevo = new BigDecimal("70000.00");
+        LocalDateTime antesDeCrear = LocalDateTime.now();
+
+        // Act
+        Transaccion transaccion = Transaccion.retiro(cuentaId, monto, saldoAnterior, saldoNuevo);
+
+        // Assert
+        assertThat(transaccion.getCuentaId()).isEqualTo(cuentaId);
+        assertThat(transaccion.getTipo()).isEqualTo(TipoTransaccion.RETIRO);
+        assertThat(transaccion.getMonto()).isEqualByComparingTo(monto);
+        assertThat(transaccion.getSaldoAnterior()).isEqualByComparingTo(saldoAnterior);
+        assertThat(transaccion.getSaldoNuevo()).isEqualByComparingTo(saldoNuevo);
+        assertThat(transaccion.getEstado()).isEqualTo(EstadoTransaccion.COMPLETADA);
+        assertThat(transaccion.getFechaHora()).isAfterOrEqualTo(antesDeCrear);
+    }
+
+    @Test
+    @DisplayName("Un retiro no tiene origen de deposito ni pertenece a ninguna transferencia")
+    void retiroNoTieneOrigenNiTransferencia() {
+        // Arrange
+        UUID cuentaId = UUID.randomUUID();
+
+        // Act
+        Transaccion transaccion = Transaccion.retiro(cuentaId, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ZERO);
+
+        // Assert
+        assertThat(transaccion.getOrigen()).isNull();
         assertThat(transaccion.getTransferenciaId()).isNull();
         assertThat(transaccion.getSentido()).isNull();
         assertThat(transaccion.getDescripcion()).isNull();
