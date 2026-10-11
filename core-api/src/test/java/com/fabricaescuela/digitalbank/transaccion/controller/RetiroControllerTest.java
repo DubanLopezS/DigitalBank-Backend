@@ -57,7 +57,7 @@ class RetiroControllerTest {
     }
 
     @Test
-    @DisplayName("El cliente se toma de la autenticacion y se pasa tal cual al servicio, aunque venga nulo")
+    @DisplayName("El cliente se pasa tal cual al servicio, aunque venga nulo")
     void elClienteSeTomaDeLaAutenticacionSinRevisarlo() {
         // Arrange
         UUID cuentaId = UUID.randomUUID();

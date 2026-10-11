@@ -68,7 +68,7 @@ class TransaccionTest {
     }
 
     @Test
-    @DisplayName("Un retiro queda COMPLETADO, tipado como RETIRO y con el rastro de saldos")
+    @DisplayName("Un retiro queda en estado COMPLETADA, tipado como RETIRO y con el rastro de saldos")
     void retiroQuedaCompletadoConElRastroDeSaldos() {
         // Arrange
         UUID cuentaId = UUID.randomUUID();

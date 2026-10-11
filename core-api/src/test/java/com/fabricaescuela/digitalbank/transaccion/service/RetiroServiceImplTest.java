@@ -139,7 +139,7 @@ class RetiroServiceImplTest {
     }
 
     @Test
-    @DisplayName("Si la cuenta esta BLOQUEADA o CERRADA la excepcion se propaga y no se registra transaccion")
+    @DisplayName("Si la cuenta no esta disponible la excepcion se propaga sin registrar")
     void cuentaNoDisponiblePropagaLaExcepcion() {
         // Arrange
         CuentaNoDisponibleException excepcion = new CuentaNoDisponibleException("Cuenta no disponible");

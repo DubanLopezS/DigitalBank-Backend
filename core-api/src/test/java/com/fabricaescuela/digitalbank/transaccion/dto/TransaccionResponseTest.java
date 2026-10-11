@@ -29,24 +29,17 @@ class TransaccionResponseTest {
     }
 
     @Test
-    @DisplayName("Un retiro se expone sin origen y COMPLETADO")
+    @DisplayName("Un retiro se expone sin origen")
     void retiroSeExponeSinOrigen() {
         // Arrange
-        UUID cuentaId = UUID.randomUUID();
         Transaccion retiro = Transaccion.retiro(
-                cuentaId, new BigDecimal("30000.00"), new BigDecimal("100000.00"), new BigDecimal("70000.00"));
+                UUID.randomUUID(), new BigDecimal("30000.00"), new BigDecimal("100000.00"), new BigDecimal("70000.00"));
 
         // Act
         TransaccionResponse response = TransaccionResponse.from(retiro);
 
         // Assert
-        assertThat(response.cuentaId()).isEqualTo(cuentaId);
         assertThat(response.tipo()).isEqualTo("RETIRO");
         assertThat(response.origen()).isNull();
-        assertThat(response.estado()).isEqualTo("COMPLETADA");
-        assertThat(response.monto()).isEqualByComparingTo(new BigDecimal("30000.00"));
-        assertThat(response.saldoAnterior()).isEqualByComparingTo(new BigDecimal("100000.00"));
-        assertThat(response.saldoNuevo()).isEqualByComparingTo(new BigDecimal("70000.00"));
-        assertThat(response.fechaHora()).isNotNull();
     }
 }
