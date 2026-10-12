@@ -64,6 +64,17 @@ public class Transaccion {
         return transaccion;
     }
 
+    public static Transaccion retiro(UUID cuentaId, BigDecimal monto, BigDecimal saldoAnterior,
+                                     BigDecimal saldoNuevo) {
+        Transaccion transaccion = new Transaccion();
+        transaccion.cuentaId = cuentaId;
+        transaccion.tipo = TipoTransaccion.RETIRO;
+        transaccion.monto = monto;
+        transaccion.saldoAnterior = saldoAnterior;
+        transaccion.saldoNuevo = saldoNuevo;
+        return transaccion;
+    }
+
     public UUID getId() { return id; }
     public UUID getCuentaId() { return cuentaId; }
     public TipoTransaccion getTipo() { return tipo; }

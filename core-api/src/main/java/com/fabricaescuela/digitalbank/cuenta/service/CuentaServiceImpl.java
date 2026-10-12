@@ -118,10 +118,7 @@ public class CuentaServiceImpl implements ICuentaService {
     @Override
     @Transactional
     public void validarTitularidad(UUID cuentaId, UUID clienteId) {
-        Cuenta cuenta = cuentaRepository.findById(cuentaId)
-                .orElseThrow(AccesoNoAutorizadoException::new);
-
-        if (!Objects.equals(clienteId, cuenta.getClienteId())) {
+        if (!cuentaRepository.existeCuentaDelCliente(cuentaId, clienteId)) {
             throw new AccesoNoAutorizadoException();
         }
     }

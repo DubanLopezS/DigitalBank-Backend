@@ -17,4 +17,9 @@ public interface CuentaJpaRepository extends JpaRepository<Cuenta, UUID>, ICuent
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from Cuenta c where c.id = :id")
     Optional<Cuenta> findByIdForUpdate(@Param("id") UUID id);
+
+    @Override
+    @Query("select case when count(c) > 0 then true else false end from Cuenta c "
+            + "where c.id = :cuentaId and c.clienteId = :clienteId")
+    boolean existeCuentaDelCliente(@Param("cuentaId") UUID cuentaId, @Param("clienteId") UUID clienteId);
 }
