@@ -348,35 +348,24 @@ class CuentaServiceImplTest {
     @Test
     @DisplayName("validarTitularidad no lanza nada si la cuenta es del cliente")
     void validarTitularidadConTitularCorrectoNoLanza() {
-        Cuenta cuenta = cuentaConSaldo(BigDecimal.ZERO);
-        when(cuentaRepository.findById(CUENTA_ID)).thenReturn(Optional.of(cuenta));
+        // Arrange
+        when(cuentaRepository.existeCuentaDelCliente(CUENTA_ID, CLIENTE_ID)).thenReturn(true);
 
+        // Act & Assert
         assertDoesNotThrow(() -> cuentaService.validarTitularidad(CUENTA_ID, CLIENTE_ID));
+        verify(cuentaRepository, never()).findById(any());
     }
 
     @Test
-    @DisplayName("validarTitularidad responde 403 si la cuenta es de otro cliente")
-    void validarTitularidadConOtroClienteRespondeForbidden() {
-        Cuenta cuenta = cuentaConSaldo(BigDecimal.ZERO);
-        when(cuentaRepository.findById(CUENTA_ID)).thenReturn(Optional.of(cuenta));
+    @DisplayName("validarTitularidad responde 403 si la cuenta no existe o es de otro cliente (ADR-0005)")
+    void validarTitularidadSinCuentaDelClienteRespondeForbidden() {
+        // Arrange
+        when(cuentaRepository.existeCuentaDelCliente(CUENTA_ID, OTRO_CLIENTE_ID)).thenReturn(false);
 
+        // Act & Assert
         AccesoNoAutorizadoException ex = assertThrows(
                 AccesoNoAutorizadoException.class,
                 () -> cuentaService.validarTitularidad(CUENTA_ID, OTRO_CLIENTE_ID)
-        );
-
-        assertEquals("Acceso no autorizado", ex.getMessage());
-        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
-    }
-
-    @Test
-    @DisplayName("validarTitularidad responde el mismo 403 si la cuenta no existe (ADR-0005)")
-    void validarTitularidadConCuentaInexistenteRespondeMismoForbidden() {
-        when(cuentaRepository.findById(CUENTA_ID)).thenReturn(Optional.empty());
-
-        AccesoNoAutorizadoException ex = assertThrows(
-                AccesoNoAutorizadoException.class,
-                () -> cuentaService.validarTitularidad(CUENTA_ID, CLIENTE_ID)
         );
 
         assertEquals("Acceso no autorizado", ex.getMessage());
