@@ -20,6 +20,7 @@ import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ICuentaRepo
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -370,6 +371,55 @@ class CuentaServiceImplTest {
 
         assertEquals("Acceso no autorizado", ex.getMessage());
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+    }
+
+    @Test
+    @DisplayName("obtenerIdPorNumero devuelve el id de la cuenta sin cargar la entidad")
+    void obtenerIdPorNumeroDevuelveElId() {
+        // Arrange
+        when(cuentaRepository.findIdByNumeroCuenta("1234567890")).thenReturn(Optional.of(CUENTA_ID));
+
+        // Act
+        UUID id = cuentaService.obtenerIdPorNumero("1234567890");
+
+        // Assert
+        assertEquals(CUENTA_ID, id);
+        verify(cuentaRepository, never()).findByNumeroCuenta(any());
+    }
+
+    @Test
+    @DisplayName("obtenerIdPorNumero con un numero inexistente responde 404 'Cuenta no encontrada'")
+    void obtenerIdPorNumeroInexistenteRespondeNotFound() {
+        // Arrange
+        when(cuentaRepository.findIdByNumeroCuenta("0000000000")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        CuentaNoEncontradaException ex = assertThrows(
+                CuentaNoEncontradaException.class,
+                () -> cuentaService.obtenerIdPorNumero("0000000000")
+        );
+
+        assertEquals("Cuenta no encontrada", ex.getMessage());
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
+    }
+
+    @Test
+    @DisplayName("bloquearEnOrden bloquea primero la cuenta con el id menor")
+    void bloquearEnOrdenBloqueaPrimeroElIdMenor() {
+        // Arrange
+        UUID idMenor = new UUID(0L, 1L);
+        UUID idMayor = new UUID(0L, 2L);
+        Cuenta cuenta = cuentaConSaldo(new BigDecimal("100000.00"));
+        when(cuentaRepository.findByIdForUpdate(idMenor)).thenReturn(Optional.of(cuenta));
+        when(cuentaRepository.findByIdForUpdate(idMayor)).thenReturn(Optional.of(cuenta));
+
+        // Act
+        cuentaService.bloquearEnOrden(idMayor, idMenor);
+
+        // Assert
+        InOrder orden = inOrder(cuentaRepository);
+        orden.verify(cuentaRepository).findByIdForUpdate(idMenor);
+        orden.verify(cuentaRepository).findByIdForUpdate(idMayor);
     }
 
     private Cuenta cuentaConSaldo(BigDecimal saldo) {

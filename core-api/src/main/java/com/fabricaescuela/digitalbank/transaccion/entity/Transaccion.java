@@ -75,6 +75,21 @@ public class Transaccion {
         return transaccion;
     }
 
+    public static Transaccion transferencia(UUID cuentaId, BigDecimal monto, BigDecimal saldoAnterior,
+                                            BigDecimal saldoNuevo, UUID transferenciaId,
+                                            SentidoTransferencia sentido, String descripcion) {
+        Transaccion transaccion = new Transaccion();
+        transaccion.cuentaId = cuentaId;
+        transaccion.tipo = TipoTransaccion.TRANSFERENCIA;
+        transaccion.monto = monto;
+        transaccion.saldoAnterior = saldoAnterior;
+        transaccion.saldoNuevo = saldoNuevo;
+        transaccion.transferenciaId = transferenciaId;
+        transaccion.sentido = sentido;
+        transaccion.descripcion = descripcion;
+        return transaccion;
+    }
+
     public UUID getId() { return id; }
     public UUID getCuentaId() { return cuentaId; }
     public TipoTransaccion getTipo() { return tipo; }
