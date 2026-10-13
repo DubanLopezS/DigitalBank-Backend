@@ -123,6 +123,27 @@ public class CuentaServiceImpl implements ICuentaService {
         }
     }
 
+    @Override
+    @Transactional
+    public UUID obtenerIdPorNumero(String numeroCuenta) {
+        return cuentaRepository.findIdByNumeroCuenta(numeroCuenta)
+                .orElseThrow(CuentaNoEncontradaException::new);
+    }
+
+    @Override
+    @Transactional
+    public void bloquearEnOrden(UUID cuentaIdA, UUID cuentaIdB) {
+        UUID menor = cuentaIdA;
+        UUID mayor = cuentaIdB;
+        if (cuentaIdA.compareTo(cuentaIdB) > 0) {
+            menor = cuentaIdB;
+            mayor = cuentaIdA;
+        }
+
+        cuentaRepository.findByIdForUpdate(menor).orElseThrow(CuentaNoEncontradaException::new);
+        cuentaRepository.findByIdForUpdate(mayor).orElseThrow(CuentaNoEncontradaException::new);
+    }
+
     private void validarCuentaDisponible(Cuenta cuenta) {
         if (cuenta.estaCerrada()) {
             throw new CuentaNoDisponibleException("Cuenta no disponible");

@@ -15,4 +15,8 @@ public interface ICuentaService {
     MovimientoSaldoResponse debitar(UUID cuentaId, BigDecimal monto);
 
     void validarTitularidad(UUID cuentaId, UUID clienteId);
+
+    UUID obtenerIdPorNumero(String numeroCuenta);
+
+    void bloquearEnOrden(UUID cuentaIdA, UUID cuentaIdB);
 }

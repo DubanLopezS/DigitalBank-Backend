@@ -105,4 +105,31 @@ class TransaccionTest {
         assertThat(transaccion.getSentido()).isNull();
         assertThat(transaccion.getDescripcion()).isNull();
     }
+
+    @Test
+    @DisplayName("Una transferencia queda COMPLETADA, sin origen y con su transferenciaId, sentido y descripcion")
+    void transferenciaQuedaCompletadaConSentidoYDescripcion() {
+        // Arrange
+        UUID cuentaId = UUID.randomUUID();
+        UUID transferenciaId = UUID.randomUUID();
+        BigDecimal monto = new BigDecimal("30000.00");
+        BigDecimal saldoAnterior = new BigDecimal("100000.00");
+        BigDecimal saldoNuevo = new BigDecimal("70000.00");
+
+        // Act
+        Transaccion transaccion = Transaccion.transferencia(cuentaId, monto, saldoAnterior, saldoNuevo,
+                transferenciaId, SentidoTransferencia.SALIENTE, "Pago arriendo");
+
+        // Assert
+        assertThat(transaccion.getCuentaId()).isEqualTo(cuentaId);
+        assertThat(transaccion.getTipo()).isEqualTo(TipoTransaccion.TRANSFERENCIA);
+        assertThat(transaccion.getMonto()).isEqualByComparingTo(monto);
+        assertThat(transaccion.getSaldoAnterior()).isEqualByComparingTo(saldoAnterior);
+        assertThat(transaccion.getSaldoNuevo()).isEqualByComparingTo(saldoNuevo);
+        assertThat(transaccion.getOrigen()).isNull();
+        assertThat(transaccion.getEstado()).isEqualTo(EstadoTransaccion.COMPLETADA);
+        assertThat(transaccion.getTransferenciaId()).isEqualTo(transferenciaId);
+        assertThat(transaccion.getSentido()).isEqualTo(SentidoTransferencia.SALIENTE);
+        assertThat(transaccion.getDescripcion()).isEqualTo("Pago arriendo");
+    }
 }
