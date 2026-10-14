@@ -60,6 +60,18 @@ public class Cuenta {
         return estado == EstadoCuenta.ACTIVA;
     }
 
+    public boolean estaBloqueada() {
+        return estado == EstadoCuenta.BLOQUEADA;
+    }
+
+    public void bloquear() {
+        this.estado = EstadoCuenta.BLOQUEADA;
+    }
+
+    public void desbloquear() {
+        this.estado = EstadoCuenta.ACTIVA;
+    }
+
     public void acreditar(BigDecimal monto) {
         this.saldoContable = this.saldoContable.add(monto);
     }
