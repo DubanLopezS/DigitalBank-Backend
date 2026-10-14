@@ -26,7 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("EstadoCuentaController - bloqueo y desbloqueo")
+@DisplayName("EstadoCuentaController - bloqueo, desbloqueo y cierre")
 class EstadoCuentaControllerTest {
 
     private static final UUID CUENTA_ID = UUID.randomUUID();
@@ -41,7 +41,7 @@ class EstadoCuentaControllerTest {
     @Test
     @DisplayName("Bloquear responde 200 con el resultado del servicio")
     void bloquearResponde200() {
-
+        
         UUID usuarioId = UUID.randomUUID();
         CambioEstadoCuentaRequest request = new CambioEstadoCuentaRequest(MOTIVO);
         CambioEstadoCuentaResponse esperada = respuesta(TipoAccionCuenta.BLOQUEO,
@@ -52,7 +52,7 @@ class EstadoCuentaControllerTest {
         ResponseEntity<CambioEstadoCuentaResponse> resultado =
                 estadoCuentaController.bloquear(CUENTA_ID, request, autenticacion(usuarioId));
 
-
+        
         assertThat(resultado.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(resultado.getBody()).isEqualTo(esperada);
     }
@@ -60,17 +60,37 @@ class EstadoCuentaControllerTest {
     @Test
     @DisplayName("Desbloquear responde 200 con el resultado del servicio")
     void desbloquearResponde200() {
-
+        
         UUID usuarioId = UUID.randomUUID();
         CambioEstadoCuentaRequest request = new CambioEstadoCuentaRequest(MOTIVO);
         CambioEstadoCuentaResponse esperada = respuesta(TipoAccionCuenta.DESBLOQUEO,
                 EstadoCuenta.BLOQUEADA, EstadoCuenta.ACTIVA, usuarioId);
         when(estadoCuentaService.desbloquear(CUENTA_ID, usuarioId, request)).thenReturn(esperada);
 
-
+        
         ResponseEntity<CambioEstadoCuentaResponse> resultado =
                 estadoCuentaController.desbloquear(CUENTA_ID, request, autenticacion(usuarioId));
 
+        
+        assertThat(resultado.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(resultado.getBody()).isEqualTo(esperada);
+    }
+
+    @Test
+    @DisplayName("Cerrar responde 200 con el resultado del servicio")
+    void cerrarResponde200() {
+        
+        UUID usuarioId = UUID.randomUUID();
+        CambioEstadoCuentaRequest request = new CambioEstadoCuentaRequest(MOTIVO);
+        CambioEstadoCuentaResponse esperada = respuesta(TipoAccionCuenta.CIERRE,
+                EstadoCuenta.ACTIVA, EstadoCuenta.CERRADA, usuarioId);
+        when(estadoCuentaService.cerrar(CUENTA_ID, usuarioId, request)).thenReturn(esperada);
+
+        
+        ResponseEntity<CambioEstadoCuentaResponse> resultado =
+                estadoCuentaController.cerrar(CUENTA_ID, request, autenticacion(usuarioId));
+
+        
         assertThat(resultado.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(resultado.getBody()).isEqualTo(esperada);
     }
@@ -78,33 +98,47 @@ class EstadoCuentaControllerTest {
     @Test
     @DisplayName("El responsable del bloqueo se toma del token, no de la peticion")
     void elResponsableDelBloqueoSeTomaDelToken() {
-
+        
         UUID usuarioId = UUID.randomUUID();
         CambioEstadoCuentaRequest request = new CambioEstadoCuentaRequest(MOTIVO);
 
-
+        
         estadoCuentaController.bloquear(CUENTA_ID, request, autenticacion(usuarioId));
 
-
+        
         verify(estadoCuentaService).bloquear(CUENTA_ID, usuarioId, request);
     }
 
     @Test
     @DisplayName("El responsable del desbloqueo se toma del token, no de la peticion")
     void elResponsableDelDesbloqueoSeTomaDelToken() {
-
+        
         UUID usuarioId = UUID.randomUUID();
         CambioEstadoCuentaRequest request = new CambioEstadoCuentaRequest(MOTIVO);
 
-
+        
         estadoCuentaController.desbloquear(CUENTA_ID, request, autenticacion(usuarioId));
 
-
+        
         verify(estadoCuentaService).desbloquear(CUENTA_ID, usuarioId, request);
     }
 
+    @Test
+    @DisplayName("El responsable del cierre se toma del token, no de la peticion")
+    void elResponsableDelCierreSeTomaDelToken() {
+        
+        UUID usuarioId = UUID.randomUUID();
+        CambioEstadoCuentaRequest request = new CambioEstadoCuentaRequest(MOTIVO);
+
+        
+        estadoCuentaController.cerrar(CUENTA_ID, request, autenticacion(usuarioId));
+
+
+        verify(estadoCuentaService).cerrar(CUENTA_ID, usuarioId, request);
+    }
+
     private Authentication autenticacion(UUID usuarioId) {
-        // Igual que el JwtAuthenticationFilter: el principal es el usuarioId.
+        
         return new UsernamePasswordAuthenticationToken(
                 usuarioId, null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
     }

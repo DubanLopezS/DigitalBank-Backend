@@ -42,4 +42,13 @@ public class EstadoCuentaController {
         UUID usuarioId = UUID.fromString(authentication.getName());
         return ResponseEntity.ok(estadoCuentaService.desbloquear(cuentaId, usuarioId, request));
     }
+
+        @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{cuentaId}/cerrar")
+    public ResponseEntity<CambioEstadoCuentaResponse> cerrar(@PathVariable UUID cuentaId,
+                                                            @Valid @RequestBody CambioEstadoCuentaRequest request,
+                                                            Authentication authentication) {
+        UUID usuarioId = UUID.fromString(authentication.getName());
+        return ResponseEntity.ok(estadoCuentaService.cerrar(cuentaId, usuarioId, request));
+    }
 }
