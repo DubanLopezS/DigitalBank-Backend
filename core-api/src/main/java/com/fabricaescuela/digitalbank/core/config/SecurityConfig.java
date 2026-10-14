@@ -48,7 +48,7 @@ public class SecurityConfig {
                         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                         response.setContentType("application/json");
                         response.getWriter().write("""
-                            {"status":403,"error":"Forbidden","message":"No tienes permisos para realizar esta acción","path":"%s"}
+                            {"status":403,"error":"Forbidden","message":"Acceso no autorizado","path":"%s"}
                             """.formatted(request.getRequestURI()));
                     })
                         
