@@ -10,4 +10,7 @@ public interface IEstadoCuentaService {
     CambioEstadoCuentaResponse bloquear(UUID cuentaId, UUID usuarioId, CambioEstadoCuentaRequest request);
 
     CambioEstadoCuentaResponse desbloquear(UUID cuentaId, UUID usuarioId, CambioEstadoCuentaRequest request);
+
+    CambioEstadoCuentaResponse cerrar(UUID cuentaId, UUID usuarioId, CambioEstadoCuentaRequest request);
 }
+

@@ -72,6 +72,14 @@ public class Cuenta {
         this.estado = EstadoCuenta.ACTIVA;
     }
 
+    public boolean tieneSaldoCero() {
+        return saldoContable.compareTo(BigDecimal.ZERO) == 0;
+    }
+
+    public void cerrar() {
+        this.estado = EstadoCuenta.CERRADA;
+    }
+
     public void acreditar(BigDecimal monto) {
         this.saldoContable = this.saldoContable.add(monto);
     }

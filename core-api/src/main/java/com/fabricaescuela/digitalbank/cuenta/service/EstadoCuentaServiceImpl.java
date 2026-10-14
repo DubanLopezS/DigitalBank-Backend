@@ -61,6 +61,25 @@ public class EstadoCuentaServiceImpl implements IEstadoCuentaService {
                 estadoAnterior, request.motivo());
     }
 
+    @Override
+    @Transactional
+    public CambioEstadoCuentaResponse cerrar(UUID cuentaId, UUID usuarioId,
+                                            CambioEstadoCuentaRequest request) {
+        Cuenta cuenta = obtenerCuentaBloqueada(cuentaId);
+
+        if (cuenta.estaCerrada()) {
+            throw new CuentaNoDisponibleException("La cuenta ya está cerrada");
+        }
+        if (!cuenta.tieneSaldoCero()) {
+            throw new CuentaNoDisponibleException("La cuenta debe tener saldo $0 para cerrarse");
+        }
+
+        EstadoCuenta estadoAnterior = cuenta.getEstado();
+        cuenta.cerrar();
+        return registrarCambio(cuenta, usuarioId, TipoAccionCuenta.CIERRE,
+                estadoAnterior, request.motivo());
+    }
+
     // Debe ser LO PRIMERO que se hace con la cuenta: findByIdForUpdate bloquea la fila
     // y trae el estado real. Si se leyera antes con findById, Hibernate podría devolver
     // una copia vieja. El ADMIN recibe 404 si no existe (ADR-0005).

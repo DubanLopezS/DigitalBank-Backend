@@ -35,13 +35,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("EstadoCuentaServiceImpl - bloqueo y desbloqueo de cuentas")
+@DisplayName("EstadoCuentaServiceImpl - bloqueo, desbloqueo y cierre de cuentas")
 class EstadoCuentaServiceImplTest {
 
     private static final UUID CUENTA_ID = UUID.randomUUID();
     private static final UUID USUARIO_ID = UUID.randomUUID();
     private static final String NUMERO_CUENTA = "1234567890";
     private static final String MOTIVO = "Actividad sospechosa detectada";
+    private static final BigDecimal SALDO_CON_DINERO = new BigDecimal("100000.00");
 
     @Mock
     private ICuentaRepository cuentaRepository;
@@ -52,20 +53,21 @@ class EstadoCuentaServiceImplTest {
     @InjectMocks
     private EstadoCuentaServiceImpl estadoCuentaService;
 
+
     @Test
     @DisplayName("Bloquear una cuenta ACTIVA la deja BLOQUEADA y registra la auditoria")
     void bloquearCuentaActivaLaDejaBloqueada() {
-
-        Cuenta cuenta = cuenta(EstadoCuenta.ACTIVA);
+        
+        Cuenta cuenta = cuenta(EstadoCuenta.ACTIVA, SALDO_CON_DINERO);
         when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
         when(movimientoRepository.save(any(MovimientoAdministrativoCuenta.class)))
                 .thenAnswer(invocacion -> invocacion.getArgument(0));
 
-
+        
         CambioEstadoCuentaResponse respuesta =
                 estadoCuentaService.bloquear(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO));
 
-
+        
         assertThat(cuenta.getEstado()).isEqualTo(EstadoCuenta.BLOQUEADA);
         assertThat(respuesta.numeroCuenta()).isEqualTo(NUMERO_CUENTA);
         assertThat(respuesta.accion()).isEqualTo(TipoAccionCuenta.BLOQUEO);
@@ -80,8 +82,8 @@ class EstadoCuentaServiceImplTest {
     @Test
     @DisplayName("El bloqueo guarda la auditoria con el responsable, el motivo y los estados")
     void bloquearGuardaLaAuditoria() {
-        // Arrange
-        Cuenta cuenta = cuenta(EstadoCuenta.ACTIVA);
+        
+        Cuenta cuenta = cuenta(EstadoCuenta.ACTIVA, SALDO_CON_DINERO);
         when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
         when(movimientoRepository.save(any(MovimientoAdministrativoCuenta.class)))
                 .thenAnswer(invocacion -> invocacion.getArgument(0));
@@ -91,7 +93,7 @@ class EstadoCuentaServiceImplTest {
         
         estadoCuentaService.bloquear(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO));
 
-
+        
         verify(movimientoRepository).save(captor.capture());
         MovimientoAdministrativoCuenta guardado = captor.getValue();
         assertThat(guardado.getTipoAccion()).isEqualTo(TipoAccionCuenta.BLOQUEO);
@@ -105,10 +107,11 @@ class EstadoCuentaServiceImplTest {
     @EnumSource(value = EstadoCuenta.class, names = {"BLOQUEADA", "CERRADA"})
     @DisplayName("Bloquear una cuenta que no esta ACTIVA responde 409 y no guarda nada")
     void bloquearCuentaNoActivaResponde409(EstadoCuenta estado) {
-
-        Cuenta cuenta = cuenta(estado);
+        
+        Cuenta cuenta = cuenta(estado, SALDO_CON_DINERO);
         when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
 
+        
         assertThatThrownBy(() ->
                 estadoCuentaService.bloquear(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO)))
                 .isInstanceOf(CuentaNoDisponibleException.class)
@@ -124,9 +127,10 @@ class EstadoCuentaServiceImplTest {
     @Test
     @DisplayName("Bloquear una cuenta inexistente responde 404")
     void bloquearCuentaInexistenteResponde404() {
-
+        
         when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.empty());
 
+        
         assertThatThrownBy(() ->
                 estadoCuentaService.bloquear(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO)))
                 .isInstanceOf(CuentaNoEncontradaException.class)
@@ -136,20 +140,24 @@ class EstadoCuentaServiceImplTest {
         verify(movimientoRepository, never()).save(any());
     }
 
+
+
     @Test
     @DisplayName("Desbloquear una cuenta BLOQUEADA la deja ACTIVA y registra la auditoria")
     void desbloquearCuentaBloqueadaLaDejaActiva() {
-        // Arrange
-        Cuenta cuenta = cuenta(EstadoCuenta.BLOQUEADA);
+        
+        Cuenta cuenta = cuenta(EstadoCuenta.BLOQUEADA, SALDO_CON_DINERO);
         when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
         when(movimientoRepository.save(any(MovimientoAdministrativoCuenta.class)))
                 .thenAnswer(invocacion -> invocacion.getArgument(0));
         ArgumentCaptor<MovimientoAdministrativoCuenta> captor =
                 ArgumentCaptor.forClass(MovimientoAdministrativoCuenta.class);
 
+        
         CambioEstadoCuentaResponse respuesta =
                 estadoCuentaService.desbloquear(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO));
 
+        
         assertThat(cuenta.getEstado()).isEqualTo(EstadoCuenta.ACTIVA);
         assertThat(respuesta.accion()).isEqualTo(TipoAccionCuenta.DESBLOQUEO);
         assertThat(respuesta.estadoAnterior()).isEqualTo(EstadoCuenta.BLOQUEADA);
@@ -164,10 +172,11 @@ class EstadoCuentaServiceImplTest {
     @EnumSource(value = EstadoCuenta.class, names = {"ACTIVA", "CERRADA"})
     @DisplayName("Desbloquear una cuenta que no esta BLOQUEADA responde 409 y no guarda nada")
     void desbloquearCuentaNoBloqueadaResponde409(EstadoCuenta estado) {
-
-        Cuenta cuenta = cuenta(estado);
+        
+        Cuenta cuenta = cuenta(estado, SALDO_CON_DINERO);
         when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
 
+        
         assertThatThrownBy(() ->
                 estadoCuentaService.desbloquear(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO)))
                 .isInstanceOf(CuentaNoDisponibleException.class)
@@ -183,8 +192,10 @@ class EstadoCuentaServiceImplTest {
     @Test
     @DisplayName("Desbloquear una cuenta inexistente responde 404")
     void desbloquearCuentaInexistenteResponde404() {
+        
         when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.empty());
 
+        
         assertThatThrownBy(() ->
                 estadoCuentaService.desbloquear(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO)))
                 .isInstanceOf(CuentaNoEncontradaException.class);
@@ -193,22 +204,182 @@ class EstadoCuentaServiceImplTest {
     }
 
 
-    @Test
-    @DisplayName("Se usa el bloqueo de fila y nunca la lectura simple de la cuenta")
-    void seUsaElBloqueoDeFilaYNuncaFindById() {
 
-        when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta(EstadoCuenta.ACTIVA)));
+    @Test
+    @DisplayName("Cerrar una cuenta ACTIVA con saldo $0 la deja CERRADA y registra la auditoria")
+    void cerrarCuentaActivaConSaldoCeroLaDejaCerrada() {
+        
+        Cuenta cuenta = cuenta(EstadoCuenta.ACTIVA, BigDecimal.ZERO);
+        when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
+        when(movimientoRepository.save(any(MovimientoAdministrativoCuenta.class)))
+                .thenAnswer(invocacion -> invocacion.getArgument(0));
+        ArgumentCaptor<MovimientoAdministrativoCuenta> captor =
+                ArgumentCaptor.forClass(MovimientoAdministrativoCuenta.class);
+
+        
+        CambioEstadoCuentaResponse respuesta =
+                estadoCuentaService.cerrar(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO));
+
+        
+        assertThat(cuenta.getEstado()).isEqualTo(EstadoCuenta.CERRADA);
+        assertThat(respuesta.numeroCuenta()).isEqualTo(NUMERO_CUENTA);
+        assertThat(respuesta.accion()).isEqualTo(TipoAccionCuenta.CIERRE);
+        assertThat(respuesta.estadoAnterior()).isEqualTo(EstadoCuenta.ACTIVA);
+        assertThat(respuesta.estadoNuevo()).isEqualTo(EstadoCuenta.CERRADA);
+        assertThat(respuesta.usuarioResponsableId()).isEqualTo(USUARIO_ID);
+        verify(cuentaRepository).save(cuenta);
+        verify(movimientoRepository).save(captor.capture());
+        MovimientoAdministrativoCuenta guardado = captor.getValue();
+        assertThat(guardado.getTipoAccion()).isEqualTo(TipoAccionCuenta.CIERRE);
+        assertThat(guardado.getUsuarioId()).isEqualTo(USUARIO_ID);
+        assertThat(guardado.getMotivo()).isEqualTo(MOTIVO);
+        assertThat(guardado.getEstadoAnterior()).isEqualTo(EstadoCuenta.ACTIVA);
+        assertThat(guardado.getEstadoNuevo()).isEqualTo(EstadoCuenta.CERRADA);
+    }
+
+    @Test
+    @DisplayName("Cerrar una cuenta BLOQUEADA con saldo $0 esta permitido")
+    void cerrarCuentaBloqueadaConSaldoCeroEstaPermitido() {
+        
+        Cuenta cuenta = cuenta(EstadoCuenta.BLOQUEADA, BigDecimal.ZERO);
+        when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
         when(movimientoRepository.save(any(MovimientoAdministrativoCuenta.class)))
                 .thenAnswer(invocacion -> invocacion.getArgument(0));
 
+        
+        CambioEstadoCuentaResponse respuesta =
+                estadoCuentaService.cerrar(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO));
+
+        
+        assertThat(cuenta.getEstado()).isEqualTo(EstadoCuenta.CERRADA);
+        assertThat(respuesta.estadoAnterior()).isEqualTo(EstadoCuenta.BLOQUEADA);
+        assertThat(respuesta.estadoNuevo()).isEqualTo(EstadoCuenta.CERRADA);
+    }
+
+    @Test
+    @DisplayName("El saldo 0.00 cuenta como saldo $0")
+    void elSaldoCeroConDecimalesCuentaComoCero() {
+        
+        Cuenta cuenta = cuenta(EstadoCuenta.ACTIVA, new BigDecimal("0.00"));
+        when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
+        when(movimientoRepository.save(any(MovimientoAdministrativoCuenta.class)))
+                .thenAnswer(invocacion -> invocacion.getArgument(0));
+
+        
+        estadoCuentaService.cerrar(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO));
+
+        
+        assertThat(cuenta.getEstado()).isEqualTo(EstadoCuenta.CERRADA);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = EstadoCuenta.class, names = {"ACTIVA", "BLOQUEADA"})
+    @DisplayName("Cerrar una cuenta con saldo distinto de $0 responde 409 y no guarda nada")
+    void cerrarCuentaConSaldoResponde409(EstadoCuenta estado) {
+        
+        Cuenta cuenta = cuenta(estado, new BigDecimal("0.01"));
+        when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
+
+        
+        assertThatThrownBy(() ->
+                estadoCuentaService.cerrar(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO)))
+                .isInstanceOf(CuentaNoDisponibleException.class)
+                .hasMessage("La cuenta debe tener saldo $0 para cerrarse")
+                .extracting(ex -> ((CuentaNoDisponibleException) ex).getStatus())
+                .isEqualTo(HttpStatus.CONFLICT);
+
+        assertThat(cuenta.getEstado()).isEqualTo(estado);
+        verify(cuentaRepository, never()).save(any());
+        verify(movimientoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Cerrar una cuenta ya CERRADA responde 409 'La cuenta ya esta cerrada'")
+    void cerrarCuentaYaCerradaResponde409() {
+        
+        Cuenta cuenta = cuenta(EstadoCuenta.CERRADA, BigDecimal.ZERO);
+        when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
+
+        
+        assertThatThrownBy(() ->
+                estadoCuentaService.cerrar(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO)))
+                .isInstanceOf(CuentaNoDisponibleException.class)
+                .hasMessage("La cuenta ya está cerrada")
+                .extracting(ex -> ((CuentaNoDisponibleException) ex).getStatus())
+                .isEqualTo(HttpStatus.CONFLICT);
+
+        verify(cuentaRepository, never()).save(any());
+        verify(movimientoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Una cuenta ya CERRADA con saldo recibe 'ya esta cerrada', no el mensaje del saldo")
+    void cuentaCerradaConSaldoRecibeMensajeDeYaCerrada() {
+        
+        Cuenta cuenta = cuenta(EstadoCuenta.CERRADA, SALDO_CON_DINERO);
+        when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
+
+        
+        assertThatThrownBy(() ->
+                estadoCuentaService.cerrar(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO)))
+                .isInstanceOf(CuentaNoDisponibleException.class)
+                .hasMessage("La cuenta ya está cerrada");
+    }
+
+    @Test
+    @DisplayName("Cerrar una cuenta inexistente responde 404")
+    void cerrarCuentaInexistenteResponde404() {
+       
+        when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.empty());
+
+        
+        assertThatThrownBy(() ->
+                estadoCuentaService.cerrar(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO)))
+                .isInstanceOf(CuentaNoEncontradaException.class)
+                .extracting(ex -> ((CuentaNoEncontradaException) ex).getStatus())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+
+        verify(movimientoRepository, never()).save(any());
+    }
+
+
+
+    @Test
+    @DisplayName("Bloquear usa el bloqueo de fila y nunca la lectura simple de la cuenta")
+    void bloquearUsaElBloqueoDeFilaYNuncaFindById() {
+        
+        when(cuentaRepository.findByIdForUpdate(CUENTA_ID))
+                .thenReturn(Optional.of(cuenta(EstadoCuenta.ACTIVA, SALDO_CON_DINERO)));
+        when(movimientoRepository.save(any(MovimientoAdministrativoCuenta.class)))
+                .thenAnswer(invocacion -> invocacion.getArgument(0));
+
+        
         estadoCuentaService.bloquear(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO));
 
+        
         verify(cuentaRepository).findByIdForUpdate(CUENTA_ID);
         verify(cuentaRepository, never()).findById(any());
     }
 
-    private Cuenta cuenta(EstadoCuenta estado) {
-        Cuenta cuenta = new Cuenta(UUID.randomUUID(), NUMERO_CUENTA, TipoCuenta.AHORROS, new BigDecimal("100000.00"));
+    @Test
+    @DisplayName("Cerrar usa el bloqueo de fila y nunca la lectura simple de la cuenta")
+    void cerrarUsaElBloqueoDeFilaYNuncaFindById() {
+        
+        when(cuentaRepository.findByIdForUpdate(CUENTA_ID))
+                .thenReturn(Optional.of(cuenta(EstadoCuenta.ACTIVA, BigDecimal.ZERO)));
+        when(movimientoRepository.save(any(MovimientoAdministrativoCuenta.class)))
+                .thenAnswer(invocacion -> invocacion.getArgument(0));
+
+        
+        estadoCuentaService.cerrar(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO));
+
+        
+        verify(cuentaRepository).findByIdForUpdate(CUENTA_ID);
+        verify(cuentaRepository, never()).findById(any());
+    }
+
+    private Cuenta cuenta(EstadoCuenta estado, BigDecimal saldo) {
+        Cuenta cuenta = new Cuenta(UUID.randomUUID(), NUMERO_CUENTA, TipoCuenta.AHORROS, saldo);
         ReflectionTestUtils.setField(cuenta, "estado", estado);
         return cuenta;
     }
