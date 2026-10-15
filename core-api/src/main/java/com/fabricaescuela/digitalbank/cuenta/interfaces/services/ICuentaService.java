@@ -5,6 +5,7 @@ import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
 import com.fabricaescuela.digitalbank.cuenta.dto.MovimientoSaldoResponse;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface ICuentaService {
@@ -18,5 +19,9 @@ public interface ICuentaService {
 
     UUID obtenerIdPorNumero(String numeroCuenta);
 
+    Optional<UUID> buscarIdPorNumero(String numeroCuenta);
+
     void bloquearEnOrden(UUID cuentaIdA, UUID cuentaIdB);
+
+    boolean estaCerrada(UUID cuentaId);
 }
