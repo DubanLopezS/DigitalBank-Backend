@@ -422,6 +422,82 @@ class CuentaServiceImplTest {
         orden.verify(cuentaRepository).findByIdForUpdate(idMayor);
     }
 
+    @Test
+    @DisplayName("buscarIdPorNumero devuelve el id de la cuenta cuando existe")
+    void buscarIdPorNumeroDevuelveElId() {
+        // Arrange
+        when(cuentaRepository.findIdByNumeroCuenta("1234567890")).thenReturn(Optional.of(CUENTA_ID));
+
+        // Act
+        Optional<UUID> id = cuentaService.buscarIdPorNumero("1234567890");
+
+        // Assert
+        assertEquals(Optional.of(CUENTA_ID), id);
+    }
+
+    @Test
+    @DisplayName("buscarIdPorNumero devuelve vacio cuando la cuenta no existe, sin lanzar excepcion")
+    void buscarIdPorNumeroInexistenteDevuelveVacio() {
+        // Arrange
+        when(cuentaRepository.findIdByNumeroCuenta("0000000000")).thenReturn(Optional.empty());
+
+        // Act
+        Optional<UUID> id = cuentaService.buscarIdPorNumero("0000000000");
+
+        // Assert
+        assertTrue(id.isEmpty());
+    }
+
+    @Test
+    @DisplayName("estaCerrada es verdadero para una cuenta CERRADA")
+    void estaCerradaConCuentaCerradaEsVerdadero() {
+        // Arrange
+        Cuenta cuenta = cuentaConSaldo(BigDecimal.ZERO);
+        cuenta.cerrar();
+        when(cuentaRepository.findById(CUENTA_ID)).thenReturn(Optional.of(cuenta));
+
+        // Act & Assert
+        assertTrue(cuentaService.estaCerrada(CUENTA_ID));
+    }
+
+    @Test
+    @DisplayName("estaCerrada es falso para una cuenta BLOQUEADA: puede seguir recibiendo (HU-07a)")
+    void estaCerradaConCuentaBloqueadaEsFalso() {
+        // Arrange
+        Cuenta cuenta = cuentaConSaldo(new BigDecimal("100000.00"));
+        cuenta.bloquear();
+        when(cuentaRepository.findById(CUENTA_ID)).thenReturn(Optional.of(cuenta));
+
+        // Act & Assert
+        assertFalse(cuentaService.estaCerrada(CUENTA_ID));
+    }
+
+    @Test
+    @DisplayName("estaCerrada es falso para una cuenta ACTIVA")
+    void estaCerradaConCuentaActivaEsFalso() {
+        // Arrange
+        Cuenta cuenta = cuentaConSaldo(new BigDecimal("100000.00"));
+        when(cuentaRepository.findById(CUENTA_ID)).thenReturn(Optional.of(cuenta));
+
+        // Act & Assert
+        assertFalse(cuentaService.estaCerrada(CUENTA_ID));
+    }
+
+    @Test
+    @DisplayName("estaCerrada con una cuenta inexistente responde 404 'Cuenta no encontrada'")
+    void estaCerradaConCuentaInexistenteRespondeNotFound() {
+        // Arrange
+        when(cuentaRepository.findById(CUENTA_ID)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        CuentaNoEncontradaException ex = assertThrows(
+                CuentaNoEncontradaException.class,
+                () -> cuentaService.estaCerrada(CUENTA_ID)
+        );
+
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
+    }
+
     private Cuenta cuentaConSaldo(BigDecimal saldo) {
         Cuenta cuenta = new Cuenta(CLIENTE_ID, "1234567890", TipoCuenta.AHORROS, saldo);
         ReflectionTestUtils.setField(cuenta, "id", CUENTA_ID);

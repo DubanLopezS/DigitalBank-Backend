@@ -6,6 +6,8 @@ import com.fabricaescuela.digitalbank.transaccion.dto.TransferenciaRequest;
 import com.fabricaescuela.digitalbank.transaccion.dto.TransferenciaResponse;
 import com.fabricaescuela.digitalbank.transaccion.entity.SentidoTransferencia;
 import com.fabricaescuela.digitalbank.transaccion.entity.Transaccion;
+import com.fabricaescuela.digitalbank.transaccion.exception.CuentaDestinoNoDisponibleException;
+import com.fabricaescuela.digitalbank.transaccion.exception.CuentaDestinoNoEncontradaException;
 import com.fabricaescuela.digitalbank.transaccion.interfaces.repositories.ITransaccionRepository;
 import com.fabricaescuela.digitalbank.transaccion.interfaces.services.ITransferenciaService;
 
@@ -30,8 +32,11 @@ public class TransferenciaServiceImpl implements ITransferenciaService {
     public TransferenciaResponse registrarTransferencia(UUID cuentaId, TransferenciaRequest request, UUID clienteId) {
         cuentaService.validarTitularidad(cuentaId, clienteId);
 
-        UUID destinoId = cuentaService.obtenerIdPorNumero(request.cuentaDestino());
+        UUID destinoId = cuentaService.buscarIdPorNumero(request.cuentaDestino())
+                .orElseThrow(CuentaDestinoNoEncontradaException::new);
         cuentaService.bloquearEnOrden(cuentaId, destinoId);
+
+        validarCuentaDestinoDisponible(destinoId);
 
         MovimientoSaldoResponse salida = cuentaService.debitar(cuentaId, request.monto());
         MovimientoSaldoResponse entrada = cuentaService.acreditar(destinoId, request.monto());
@@ -60,5 +65,11 @@ public class TransferenciaServiceImpl implements ITransferenciaService {
         transaccionRepository.save(transaccionEntrada);
 
         return TransferenciaResponse.from(salidaGuardada, request.cuentaDestino());
+    }
+
+    private void validarCuentaDestinoDisponible(UUID destinoId) {
+        if (cuentaService.estaCerrada(destinoId)) {
+            throw new CuentaDestinoNoDisponibleException();
+        }
     }
 }

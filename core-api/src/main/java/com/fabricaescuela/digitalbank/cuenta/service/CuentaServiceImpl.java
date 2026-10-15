@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -128,6 +129,20 @@ public class CuentaServiceImpl implements ICuentaService {
     public UUID obtenerIdPorNumero(String numeroCuenta) {
         return cuentaRepository.findIdByNumeroCuenta(numeroCuenta)
                 .orElseThrow(CuentaNoEncontradaException::new);
+    }
+
+    @Override
+    @Transactional
+    public Optional<UUID> buscarIdPorNumero(String numeroCuenta) {
+        return cuentaRepository.findIdByNumeroCuenta(numeroCuenta);
+    }
+
+    @Override
+    @Transactional
+    public boolean estaCerrada(UUID cuentaId) {
+        return cuentaRepository.findById(cuentaId)
+                .orElseThrow(CuentaNoEncontradaException::new)
+                .estaCerrada();
     }
 
     @Override
