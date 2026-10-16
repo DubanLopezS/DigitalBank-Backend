@@ -8,6 +8,9 @@ import com.fabricaescuela.digitalbank.transaccion.entity.SentidoTransferencia;
 import com.fabricaescuela.digitalbank.transaccion.entity.Transaccion;
 import com.fabricaescuela.digitalbank.transaccion.exception.CuentaDestinoNoDisponibleException;
 import com.fabricaescuela.digitalbank.transaccion.exception.CuentaDestinoNoEncontradaException;
+import com.fabricaescuela.digitalbank.transaccion.exception.CuentaOrigenBloqueadaException;
+import com.fabricaescuela.digitalbank.transaccion.exception.CuentaOrigenDestinoIgualesException;
+import com.fabricaescuela.digitalbank.transaccion.exception.CuentaOrigenNoDisponibleException;
 import com.fabricaescuela.digitalbank.transaccion.interfaces.repositories.ITransaccionRepository;
 import com.fabricaescuela.digitalbank.transaccion.interfaces.services.ITransferenciaService;
 
@@ -34,8 +37,11 @@ public class TransferenciaServiceImpl implements ITransferenciaService {
 
         UUID destinoId = cuentaService.buscarIdPorNumero(request.cuentaDestino())
                 .orElseThrow(CuentaDestinoNoEncontradaException::new);
+        validarCuentasDistintas(cuentaId, destinoId);
+
         cuentaService.bloquearEnOrden(cuentaId, destinoId);
 
+        validarCuentaOrigenDisponible(cuentaId);
         validarCuentaDestinoDisponible(destinoId);
 
         MovimientoSaldoResponse salida = cuentaService.debitar(cuentaId, request.monto());
@@ -65,6 +71,21 @@ public class TransferenciaServiceImpl implements ITransferenciaService {
         transaccionRepository.save(transaccionEntrada);
 
         return TransferenciaResponse.from(salidaGuardada, request.cuentaDestino());
+    }
+
+    private void validarCuentasDistintas(UUID origenId, UUID destinoId) {
+        if (origenId.equals(destinoId)) {
+            throw new CuentaOrigenDestinoIgualesException();
+        }
+    }
+
+    private void validarCuentaOrigenDisponible(UUID origenId) {
+        if (cuentaService.estaBloqueada(origenId)) {
+            throw new CuentaOrigenBloqueadaException();
+        }
+        if (cuentaService.estaCerrada(origenId)) {
+            throw new CuentaOrigenNoDisponibleException();
+        }
     }
 
     private void validarCuentaDestinoDisponible(UUID destinoId) {
