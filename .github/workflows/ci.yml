@@ -1,0 +1,30 @@
+name: CI
+
+# Cuándo corre: en cada PR hacia main y cuando algo llega a main.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    # Máquina limpia con Linux que GitHub presta mientras corre el robot.
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Descarga el código del repo en esa máquina.
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      # 2. Instala Java 21 y guarda en caché las librerías de Maven.
+      - name: Instalar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # 3. Lo mismo que haces tú a mano: tests y regla de cobertura (JaCoCo).
+      - name: Compilar y probar
+        run: ./mvnw -B clean verify
