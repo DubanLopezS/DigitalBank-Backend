@@ -24,4 +24,6 @@ public interface ICuentaService {
     void bloquearEnOrden(UUID cuentaIdA, UUID cuentaIdB);
 
     boolean estaCerrada(UUID cuentaId);
+
+    boolean estaBloqueada(UUID cuentaId);
 }

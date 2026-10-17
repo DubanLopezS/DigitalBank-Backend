@@ -173,6 +173,7 @@ class TransferenciaServiceImplTest {
     void destinoCerradoRespondeConflict() {
         // Arrange
         when(cuentaService.buscarIdPorNumero(CUENTA_DESTINO)).thenReturn(Optional.of(DESTINO_ID));
+        when(cuentaService.estaCerrada(CUENTA_ID)).thenReturn(false);
         when(cuentaService.estaCerrada(DESTINO_ID)).thenReturn(true);
 
         // Act & Assert
