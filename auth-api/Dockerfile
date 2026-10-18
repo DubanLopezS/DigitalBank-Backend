@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . .
 RUN chmod +x mvnw
-RUN ./mvnw -pl auth-api -am clean package -DskipTests -B
+RUN ./mvnw -pl auth-api -am clean package -B
 
 # 2. Imagen final, liviana, solo con el .jar ya construido
 FROM eclipse-temurin:21-jre
