@@ -12,6 +12,9 @@ import com.fabricaescuela.digitalbank.transaccion.entity.TipoTransaccion;
 import com.fabricaescuela.digitalbank.transaccion.entity.Transaccion;
 import com.fabricaescuela.digitalbank.transaccion.exception.CuentaDestinoNoDisponibleException;
 import com.fabricaescuela.digitalbank.transaccion.exception.CuentaDestinoNoEncontradaException;
+import com.fabricaescuela.digitalbank.transaccion.exception.CuentaOrigenBloqueadaException;
+import com.fabricaescuela.digitalbank.transaccion.exception.CuentaOrigenDestinoIgualesException;
+import com.fabricaescuela.digitalbank.transaccion.exception.CuentaOrigenNoDisponibleException;
 import com.fabricaescuela.digitalbank.transaccion.interfaces.repositories.ITransaccionRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -184,6 +187,71 @@ class TransferenciaServiceImplTest {
                 });
 
         verify(cuentaService).bloquearEnOrden(CUENTA_ID, DESTINO_ID);
+        verify(cuentaService, never()).debitar(any(UUID.class), any(BigDecimal.class));
+        verify(cuentaService, never()).acreditar(any(UUID.class), any(BigDecimal.class));
+        verifyNoInteractions(transaccionRepository);
+    }
+
+    @Test
+    @DisplayName("HU-09b: cuenta origen bloqueada responde 409 'Cuenta origen bloqueada' sin debitar ni acreditar")
+    void origenBloqueadoRespondeConflict() {
+        // Arrange
+        when(cuentaService.buscarIdPorNumero(CUENTA_DESTINO)).thenReturn(Optional.of(DESTINO_ID));
+        when(cuentaService.estaBloqueada(CUENTA_ID)).thenReturn(true);
+
+        // Act & Assert
+        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID))
+                .isInstanceOfSatisfying(CuentaOrigenBloqueadaException.class, ex -> {
+                    assertThat(ex.getMessage()).isEqualTo("Cuenta origen bloqueada");
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                });
+
+        InOrder orden = inOrder(cuentaService);
+        orden.verify(cuentaService).validarTitularidad(CUENTA_ID, CLIENTE_ID);
+        orden.verify(cuentaService).estaBloqueada(CUENTA_ID);
+        verify(cuentaService, never()).debitar(any(UUID.class), any(BigDecimal.class));
+        verify(cuentaService, never()).acreditar(any(UUID.class), any(BigDecimal.class));
+        verifyNoInteractions(transaccionRepository);
+    }
+
+    @Test
+    @DisplayName("HU-09b: cuenta origen cerrada responde 409 'Cuenta origen no disponible' sin debitar ni acreditar")
+    void origenCerradoRespondeConflict() {
+        // Arrange
+        when(cuentaService.buscarIdPorNumero(CUENTA_DESTINO)).thenReturn(Optional.of(DESTINO_ID));
+        when(cuentaService.estaCerrada(CUENTA_ID)).thenReturn(true);
+
+        // Act & Assert
+        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID))
+                .isInstanceOfSatisfying(CuentaOrigenNoDisponibleException.class, ex -> {
+                    assertThat(ex.getMessage()).isEqualTo("Cuenta origen no disponible");
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                });
+
+        InOrder orden = inOrder(cuentaService);
+        orden.verify(cuentaService).validarTitularidad(CUENTA_ID, CLIENTE_ID);
+        orden.verify(cuentaService).estaCerrada(CUENTA_ID);
+        verify(cuentaService, never()).debitar(any(UUID.class), any(BigDecimal.class));
+        verify(cuentaService, never()).acreditar(any(UUID.class), any(BigDecimal.class));
+        verifyNoInteractions(transaccionRepository);
+    }
+
+    @Test
+    @DisplayName("HU-09b: cuenta origen igual a la destino responde 400 'Cuenta origen y destino no pueden ser iguales' sin debitar ni acreditar")
+    void origenIgualADestinoRespondeBadRequest() {
+        // Arrange
+        when(cuentaService.buscarIdPorNumero(CUENTA_DESTINO)).thenReturn(Optional.of(CUENTA_ID));
+
+        // Act & Assert
+        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID))
+                .isInstanceOfSatisfying(CuentaOrigenDestinoIgualesException.class, ex -> {
+                    assertThat(ex.getMessage()).isEqualTo("Cuenta origen y destino no pueden ser iguales");
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+                });
+
+        InOrder orden = inOrder(cuentaService);
+        orden.verify(cuentaService).validarTitularidad(CUENTA_ID, CLIENTE_ID);
+        orden.verify(cuentaService).buscarIdPorNumero(CUENTA_DESTINO);
         verify(cuentaService, never()).debitar(any(UUID.class), any(BigDecimal.class));
         verify(cuentaService, never()).acreditar(any(UUID.class), any(BigDecimal.class));
         verifyNoInteractions(transaccionRepository);
