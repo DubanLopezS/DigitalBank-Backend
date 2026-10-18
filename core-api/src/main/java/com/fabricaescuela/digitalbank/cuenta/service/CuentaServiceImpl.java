@@ -147,6 +147,14 @@ public class CuentaServiceImpl implements ICuentaService {
 
     @Override
     @Transactional
+    public boolean estaBloqueada(UUID cuentaId) {
+        return cuentaRepository.findById(cuentaId)
+                .orElseThrow(CuentaNoEncontradaException::new)
+                .estaBloqueada();
+    }
+
+    @Override
+    @Transactional
     public void bloquearEnOrden(UUID cuentaIdA, UUID cuentaIdB) {
         UUID menor = cuentaIdA;
         UUID mayor = cuentaIdB;
