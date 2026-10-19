@@ -16,6 +16,8 @@ jobs:
       # 1. Descarga el código del repo en esa máquina.
       - name: Descargar el código
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # 2. Instala Java 21 y guarda en caché las librerías de Maven.
       - name: Instalar Java 21
@@ -25,6 +27,16 @@ jobs:
           java-version: '21'
           cache: maven
 
-      # 3. Lo mismo que haces tú a mano: tests y regla de cobertura (JaCoCo).
+      # 3. Lo mismo que haces tú a mano: tests y regla de cobertura (JaCoCo)
       - name: Compilar y probar
-        run: ./mvnw -B clean verify
+        run: ./mvnw -B clean verify 
+
+      # 4. Análisis de calidad en SonarCloud.
+      # Si el Quality Gate falla, el PR queda en rojo.
+      # No corre en PRs desde forks porque GitHub no les entrega los secrets.
+      - name: Análisis en SonarCloud
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./mvnw -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.qualitygate.wait=true
