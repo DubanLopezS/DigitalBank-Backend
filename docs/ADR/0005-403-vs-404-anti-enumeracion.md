@@ -2,6 +2,9 @@
 
 **Fecha:** 16 de septiembre de 2026
 **Responsable:** Equipo Digital Bank Backend
+**Estado:** Aceptado
+
+**Nota de actualización (25 de octubre de 2026):** el historial de movimientos de `reportes-api` (HU-13) aplica la misma regla en `MovimientoServiceImpl`: un CLIENTE recibe 403 si la cuenta no existe o no es suya, y ADMIN y CAJERO pueden consultar cualquier cuenta y reciben 404 si no existe.
 
 ## Contexto
 

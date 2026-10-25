@@ -2,6 +2,9 @@
 
 **Fecha:** 7 de octubre de 2026
 **Responsable:** Equipo Digital Bank Backend
+**Estado:** Aceptado
+
+**Nota de actualización (25 de octubre de 2026):** el test que pedía este ADR quedó en `TransferenciaServiceImplTest` (verifica que se guarden las dos filas con el mismo `transferenciaId`, una `SALIENTE` y otra `ENTRANTE`) y en `CuentaServiceImplIntegrationTest`.
 
 ## Contexto
 

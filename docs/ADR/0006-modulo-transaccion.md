@@ -2,6 +2,9 @@
 
 **Fecha:** 3 de octubre de 2026
 **Responsable:** Equipo Digital Bank Backend
+**Estado:** Aceptado
+
+**Nota de actualización (25 de octubre de 2026):** lo que dice este ADR sobre `IClienteService` era cierto en el Sprint 1, cuando todo era un solo proceso. Con la separación en tres APIs (ADR-0009), `CuentaServiceImpl` quedó en `core-api` y ya no usa `IClienteService` sino `IClienteConsulta`, que implementa `ClienteConsultaAdapter` con un `SELECT` a la tabla `cliente`. `TipoDocumento` quedó copiado en `core-api` (`cliente/entity`), y el módulo `transaccion` ya tiene paquete `exception` con las excepciones de transferencia.
 
 ## Contexto
 
