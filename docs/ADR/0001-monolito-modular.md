@@ -2,6 +2,9 @@
 
 **Fecha:** 2 de septiembre de 2026
 **Responsable:** Equipo Digital Bank Backend
+**Estado:** Reemplazado por ADR-0009
+
+**Nota de actualización (25 de octubre de 2026):** en el Sprint 2 el backend dejó de ser un solo desplegable y se separó en tres APIs (ADR-0009). Dentro de cada API se mantiene la organización por módulos que se describe acá. Lo dejamos como registro de la decisión del Sprint 1.
 
 ## Contexto
 

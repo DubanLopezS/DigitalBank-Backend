@@ -2,6 +2,9 @@
 
 **Fecha:** 7 de octubre de 2026
 **Responsable:** Equipo Digital Bank Backend
+**Estado:** Aceptado
+
+**Nota de actualización (25 de octubre de 2026):** la transferencia (HU-09a) bloquea las dos cuentas con `bloquearEnOrden` de `CuentaServiceImpl`, que siempre bloquea primero la de id menor. `CuentaServiceImplTest` verifica ese orden.
 
 ## Contexto
 

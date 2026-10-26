@@ -2,6 +2,7 @@
 
 **Fecha:** 11 de septiembre de 2026
 **Responsable:** Equipo Digital Bank Backend
+**Estado:** Aceptado
 
 ## Contexto
 
