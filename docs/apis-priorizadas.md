@@ -26,6 +26,6 @@ Endpoints sacados de los controllers de `main`. El rol sale de `@PreAuthorize` c
 
 | endpoint | HU | sprint | rol | prioridad | razón |
 | --- | --- | --- | --- | --- | --- |
-| `GET /api/reportes/cuentas/{cuentaId}/movimientos` | HU-13 Historial de transacciones | 2 | CLIENTE (solo sus cuentas), ADMIN y CAJERO (cualquier cuenta), sin `@PreAuthorize`: lo decide `MovimientoServiceImpl` (ADR-0005) | baja | Es de solo lectura y, si falla, no afecta saldos ni bloquea otra HU. |
+| `GET /api/reportes/cuentas/{cuentaId}/movimientos` | HU-13 Historial de transacciones por cuenta | 2 | CLIENTE (solo sus cuentas), ADMIN y CAJERO (cualquier cuenta), sin `@PreAuthorize`: lo decide `MovimientoServiceImpl` (ADR-0005) | baja | Es de solo lectura y, si falla, no afecta saldos ni bloquea otra HU. |
 
 Las tres APIs dejan además `/error`, `/swagger-ui/**`, `/swagger-ui.html` y `/v3/api-docs/**` sin token. No son de ninguna HU.
