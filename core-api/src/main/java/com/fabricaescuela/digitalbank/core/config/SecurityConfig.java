@@ -39,14 +39,14 @@ public class SecurityConfig {
                 .exceptionHandling(exceptions -> exceptions
                     .authenticationEntryPoint((request, response, authException) -> {
                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                        response.setContentType("application/json");
+                        response.setContentType("application/json;charset=UTF-8");
                         response.getWriter().write("""
                             {"status":401,"error":"Unauthorized","message":"Token no proporcionado o inválido","path":"%s"}
                             """.formatted(request.getRequestURI()));
                     })
                     .accessDeniedHandler((request, response, accessDeniedException) -> {
                         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                        response.setContentType("application/json");
+                        response.setContentType("application/json;charset=UTF-8");
                         response.getWriter().write("""
                             {"status":403,"error":"Forbidden","message":"Acceso no autorizado","path":"%s"}
                             """.formatted(request.getRequestURI()));
