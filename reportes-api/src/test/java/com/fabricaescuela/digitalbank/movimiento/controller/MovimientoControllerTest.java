@@ -9,9 +9,12 @@ import com.fabricaescuela.digitalbank.movimiento.interfaces.repositories.IMovimi
 import com.fabricaescuela.digitalbank.movimiento.service.MovimientoServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterAutoConfiguration;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -24,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
@@ -37,6 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(MovimientoController.class)
 @ImportAutoConfiguration(SecurityFilterAutoConfiguration.class)
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class, MovimientoServiceImpl.class})
+@ExtendWith(OutputCaptureExtension.class)
 @DisplayName("MovimientoController - historial de movimientos por HTTP")
 class MovimientoControllerTest {
 
@@ -143,6 +148,43 @@ class MovimientoControllerTest {
     }
 
     @Test
+    @DisplayName("El 403 por cuenta ajena deja el evento con la cuenta y el usuario que la pidio")
+    void accesoDenegadoPorCuentaAjenaDejaElEvento(CapturedOutput salida) throws Exception {
+        // Arrange
+        UUID usuarioId = UUID.randomUUID();
+        autenticarComo(usuarioId, "CLIENTE", UUID.randomUUID());
+        when(movimientoRepository.findClienteIdByCuentaId(CUENTA_ID)).thenReturn(Optional.of(UUID.randomUUID()));
+
+        // Act
+        mockMvc.perform(get(RUTA).header("Authorization", "Bearer " + TOKEN))
+                .andExpect(status().isForbidden());
+
+        // Assert
+        assertThat(salida.getAll())
+                .contains("evento=ACCESO_HISTORIAL_DENEGADO status=403 cuentaId=" + CUENTA_ID
+                        + " usuarioId=" + usuarioId + " rol=CLIENTE")
+                .doesNotContain(TOKEN);
+    }
+
+    @Test
+    @DisplayName("El 404 a un ADMIN deja el evento con la cuenta y el usuario que la pidio")
+    void cuentaInexistenteDejaElEvento(CapturedOutput salida) throws Exception {
+        // Arrange
+        UUID usuarioId = UUID.randomUUID();
+        autenticarComo(usuarioId, "ADMIN", null);
+        when(movimientoRepository.findClienteIdByCuentaId(CUENTA_ID)).thenReturn(Optional.empty());
+
+        // Act
+        mockMvc.perform(get(RUTA).header("Authorization", "Bearer " + TOKEN))
+                .andExpect(status().isNotFound());
+
+        // Assert
+        assertThat(salida.getAll())
+                .contains("evento=ACCESO_HISTORIAL_DENEGADO status=404 cuentaId=" + CUENTA_ID
+                        + " usuarioId=" + usuarioId + " rol=ADMIN");
+    }
+
+    @Test
     @DisplayName("Si fecha_inicio es posterior a fecha_fin responde 400 con el mensaje del criterio")
     void rangoInvalidoResponde400() throws Exception {
         // Arrange
@@ -207,8 +249,12 @@ class MovimientoControllerTest {
     }
 
     private void autenticarComo(String rol, UUID clienteId) {
+        autenticarComo(UUID.randomUUID(), rol, clienteId);
+    }
+
+    private void autenticarComo(UUID usuarioId, String rol, UUID clienteId) {
         when(jwtService.esTokenValido(TOKEN)).thenReturn(true);
-        when(jwtService.extraerUsuarioId(TOKEN)).thenReturn(UUID.randomUUID());
+        when(jwtService.extraerUsuarioId(TOKEN)).thenReturn(usuarioId);
         when(jwtService.extraerRol(TOKEN)).thenReturn(rol);
         when(jwtService.extraerClienteId(TOKEN)).thenReturn(clienteId);
     }

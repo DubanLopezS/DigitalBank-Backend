@@ -15,6 +15,8 @@ import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoEncontradaExcepti
 import com.fabricaescuela.digitalbank.cuenta.exception.SaldoInsuficienteException;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ICuentaRepository;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ICuentaService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,8 @@ import java.util.UUID;
 
 @Service
 public class CuentaServiceImpl implements ICuentaService {
+
+    private static final Logger log = LoggerFactory.getLogger(CuentaServiceImpl.class);
 
     private final ICuentaRepository cuentaRepository;
     private final IClienteConsulta clienteService;
@@ -65,7 +69,10 @@ public class CuentaServiceImpl implements ICuentaService {
                 saldoInicial
         );
 
-        return CuentaResponse.from(cuentaRepository.save(cuenta));
+        Cuenta cuentaGuardada = cuentaRepository.save(cuenta);
+        log.info("evento=CUENTA_ABIERTA cuentaId={} clienteId={}",
+                cuentaGuardada.getId(), cuentaGuardada.getClienteId());
+        return CuentaResponse.from(cuentaGuardada);
     }
 
     @Override

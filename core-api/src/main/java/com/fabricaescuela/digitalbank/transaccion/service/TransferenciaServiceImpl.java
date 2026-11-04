@@ -14,6 +14,8 @@ import com.fabricaescuela.digitalbank.transaccion.exception.CuentaOrigenNoDispon
 import com.fabricaescuela.digitalbank.transaccion.interfaces.repositories.ITransaccionRepository;
 import com.fabricaescuela.digitalbank.transaccion.interfaces.services.ITransferenciaService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,8 @@ import java.util.UUID;
 
 @Service
 public class TransferenciaServiceImpl implements ITransferenciaService {
+
+    private static final Logger log = LoggerFactory.getLogger(TransferenciaServiceImpl.class);
 
     private final ICuentaService cuentaService;
     private final ITransaccionRepository transaccionRepository;
@@ -68,8 +72,12 @@ public class TransferenciaServiceImpl implements ITransferenciaService {
                 request.descripcion()
         );
         Transaccion salidaGuardada = transaccionRepository.save(transaccionSalida);
-        transaccionRepository.save(transaccionEntrada);
+        Transaccion entradaGuardada = transaccionRepository.save(transaccionEntrada);
 
+        log.info("evento=TRANSFERENCIA_REGISTRADA cuentaId={} transaccionId={} tipo={} monto={} "
+                        + "transferenciaId={} cuentaOrigenId={} cuentaDestinoId={} transaccionEntradaId={}",
+                salidaGuardada.getCuentaId(), salidaGuardada.getId(), salidaGuardada.getTipo(),
+                salidaGuardada.getMonto(), transferenciaId, cuentaId, destinoId, entradaGuardada.getId());
         return TransferenciaResponse.from(salidaGuardada, request.cuentaDestino());
     }
 

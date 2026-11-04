@@ -8,6 +8,8 @@ import com.fabricaescuela.digitalbank.transaccion.entity.Transaccion;
 import com.fabricaescuela.digitalbank.transaccion.interfaces.repositories.ITransaccionRepository;
 import com.fabricaescuela.digitalbank.transaccion.interfaces.services.IRetiroService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +17,8 @@ import java.util.UUID;
 
 @Service
 public class RetiroServiceImpl implements IRetiroService {
+
+    private static final Logger log = LoggerFactory.getLogger(RetiroServiceImpl.class);
 
     private final ICuentaService cuentaService;
     private final ITransaccionRepository transaccionRepository;
@@ -39,6 +43,9 @@ public class RetiroServiceImpl implements IRetiroService {
         );
         Transaccion transaccionGuardada = transaccionRepository.save(transaccion);
 
+        log.info("evento=RETIRO_REGISTRADO cuentaId={} transaccionId={} tipo={} monto={}",
+                transaccionGuardada.getCuentaId(), transaccionGuardada.getId(),
+                transaccionGuardada.getTipo(), transaccionGuardada.getMonto());
         return TransaccionResponse.from(transaccionGuardada);
     }
 }

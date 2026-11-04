@@ -1,6 +1,7 @@
 -- Crea los usuarios internos (ADMIN y CAJERO), ya que no hay endpoint para eso.
 -- Se corre una sola vez, después de que core-api haya aplicado las migraciones.
 -- Antes de correrlo hay que reemplazar los correos y contraseñas entre < >.
+-- Los correos deben ir en minúsculas, porque la migración V5 agrega un CHECK que lo exige.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 

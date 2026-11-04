@@ -1,6 +1,8 @@
 package com.fabricaescuela.digitalbank.core.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -15,8 +17,14 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<Map<String, Object>> handleApiException(ApiException ex, HttpServletRequest request) {
+        if (ex.getStatus() == HttpStatus.CONFLICT || ex.getStatus() == HttpStatus.TOO_MANY_REQUESTS) {
+            log.warn("evento=ERROR_NEGOCIO status={} excepcion={} path={}",
+                    ex.getStatus().value(), ex.getClass().getSimpleName(), request.getRequestURI());
+        }
         return ResponseEntity.status(ex.getStatus())
                 .body(buildBody(ex.getStatus(), ex.getMessage(), request));
     }

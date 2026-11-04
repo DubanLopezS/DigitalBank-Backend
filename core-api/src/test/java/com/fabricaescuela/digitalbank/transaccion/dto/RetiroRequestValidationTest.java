@@ -8,6 +8,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigDecimal;
 import java.util.Set;
@@ -87,5 +89,34 @@ class RetiroRequestValidationTest {
         assertThat(violaciones)
                 .extracting(violacion -> violacion.getPropertyPath().toString())
                 .containsExactly("monto");
+    }
+
+    @ParameterizedTest(name = "El monto {0} es rechazado")
+    @ValueSource(strings = {"0.004", "10.005", "1500.255"})
+    @DisplayName("Un monto con tres decimales es rechazado con Monto invalido")
+    void montoConTresDecimalesEsRechazado(String monto) {
+        // Arrange
+        RetiroRequest request = new RetiroRequest(new BigDecimal(monto));
+
+        // Act
+        Set<ConstraintViolation<RetiroRequest>> violaciones = validator.validate(request);
+
+        // Assert
+        assertThat(violaciones)
+                .extracting(ConstraintViolation::getMessage)
+                .containsExactly("Monto inválido");
+    }
+
+    @Test
+    @DisplayName("Un monto con dos decimales sigue siendo valido")
+    void montoConDosDecimalesEsValido() {
+        // Arrange
+        RetiroRequest request = new RetiroRequest(new BigDecimal("1500.25"));
+
+        // Act
+        Set<ConstraintViolation<RetiroRequest>> violaciones = validator.validate(request);
+
+        // Assert
+        assertThat(violaciones).isEmpty();
     }
 }

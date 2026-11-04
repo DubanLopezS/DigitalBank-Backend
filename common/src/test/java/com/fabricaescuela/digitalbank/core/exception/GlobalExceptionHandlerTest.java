@@ -3,6 +3,9 @@ package com.fabricaescuela.digitalbank.core.exception;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,10 +23,23 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ExtendWith(OutputCaptureExtension.class)
 @DisplayName("GlobalExceptionHandler - cuerpo uniforme de error")
 class GlobalExceptionHandlerTest {
 
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+    static class ConflictoDePrueba extends ApiException {
+        ConflictoDePrueba() {
+            super(HttpStatus.CONFLICT, "El cliente ya existe");
+        }
+    }
+
+    static class BloqueoDePrueba extends ApiException {
+        BloqueoDePrueba() {
+            super(HttpStatus.TOO_MANY_REQUESTS, "Cuenta bloqueada temporalmente");
+        }
+    }
 
     static class NoEncontradaDePrueba extends ApiException {
         NoEncontradaDePrueba() {
@@ -123,6 +139,42 @@ class GlobalExceptionHandlerTest {
                 .containsEntry("message", "Solicitud inválida")
                 .containsEntry("path", "/api/auth/login");
         assertThat(respuesta.getBody().get("message").toString()).doesNotContain("Source");
+    }
+
+    @Test
+    @DisplayName("Un 409 de negocio deja un warn con el estado, la excepcion y la ruta")
+    void conflictoDejaUnWarn(CapturedOutput salida) {
+        // Act
+        handler.handleApiException(new ConflictoDePrueba(), peticion("/api/clientes"));
+
+        // Assert
+        assertThat(salida.getAll())
+                .contains("WARN")
+                .contains("evento=ERROR_NEGOCIO status=409 excepcion=ConflictoDePrueba path=/api/clientes");
+    }
+
+    @Test
+    @DisplayName("Un 429 de negocio deja un warn con el estado, la excepcion y la ruta")
+    void bloqueoDejaUnWarn(CapturedOutput salida) {
+        // Act
+        handler.handleApiException(new BloqueoDePrueba(), peticion("/api/auth/login"));
+
+        // Assert
+        assertThat(salida.getAll())
+                .contains("evento=ERROR_NEGOCIO status=429 excepcion=BloqueoDePrueba path=/api/auth/login");
+    }
+
+    @Test
+    @DisplayName("Los 400 y 404 no se registran como eventos")
+    void erroresDeValidacionYNoEncontradoNoSeRegistran(CapturedOutput salida) throws Exception {
+        // Act
+        handler.handleApiException(new MenorDeEdadDePrueba(), peticion("/api/clientes"));
+        handler.handleApiException(new NoEncontradaDePrueba(), peticion("/api/cuentas/1234567890/saldo"));
+        handler.handleValidation(errorDeValidacion("telefono", "El teléfono debe tener 10 dígitos"),
+                peticion("/api/clientes"));
+
+        // Assert
+        assertThat(salida.getAll()).doesNotContain("evento=");
     }
 
     private MockHttpServletRequest peticion(String uri) {
