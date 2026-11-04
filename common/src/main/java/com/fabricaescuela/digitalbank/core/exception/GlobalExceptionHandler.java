@@ -21,7 +21,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<Map<String, Object>> handleApiException(ApiException ex, HttpServletRequest request) {
-        if (ex.getStatus() == HttpStatus.CONFLICT || ex.getStatus() == HttpStatus.TOO_MANY_REQUESTS) {
+        if (ex.getStatus() == HttpStatus.CONFLICT) {
             log.warn("evento=ERROR_NEGOCIO status={} excepcion={} path={}",
                     ex.getStatus().value(), ex.getClass().getSimpleName(), request.getRequestURI());
         }

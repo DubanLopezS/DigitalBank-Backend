@@ -154,14 +154,13 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Un 429 de negocio deja un warn con el estado, la excepcion y la ruta")
-    void bloqueoDejaUnWarn(CapturedOutput salida) {
+    @DisplayName("Un 429 de negocio no deja log en el manejador porque ya lo registra el login")
+    void unBloqueoNoSeRegistraEnElManejador(CapturedOutput salida) {
         // Act
         handler.handleApiException(new BloqueoDePrueba(), peticion("/api/auth/login"));
 
         // Assert
-        assertThat(salida.getAll())
-                .contains("evento=ERROR_NEGOCIO status=429 excepcion=BloqueoDePrueba path=/api/auth/login");
+        assertThat(salida.getAll()).doesNotContain("evento=ERROR_NEGOCIO");
     }
 
     @Test

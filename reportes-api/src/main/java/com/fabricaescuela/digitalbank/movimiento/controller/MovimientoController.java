@@ -2,7 +2,6 @@ package com.fabricaescuela.digitalbank.movimiento.controller;
 
 import com.fabricaescuela.digitalbank.core.exception.AccesoNoAutorizadoException;
 import com.fabricaescuela.digitalbank.movimiento.dto.HistorialMovimientosResponse;
-import com.fabricaescuela.digitalbank.movimiento.exception.CuentaNoEncontradaException;
 import com.fabricaescuela.digitalbank.movimiento.interfaces.services.IMovimientoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -70,7 +69,7 @@ public class MovimientoController {
             HistorialMovimientosResponse response = movimientoService.consultarMovimientos(
                     cuentaId, fechaInicio, fechaFin, tipo, page, size, clienteId, rol);
             return ResponseEntity.ok(response);
-        } catch (AccesoNoAutorizadoException | CuentaNoEncontradaException ex) {
+        } catch (AccesoNoAutorizadoException ex) {
             log.warn("evento=ACCESO_HISTORIAL_DENEGADO status={} cuentaId={} usuarioId={} rol={}",
                     ex.getStatus().value(), cuentaId, authentication.getName(), rol);
             throw ex;

@@ -167,11 +167,10 @@ class MovimientoControllerTest {
     }
 
     @Test
-    @DisplayName("El 404 a un ADMIN deja el evento con la cuenta y el usuario que la pidio")
-    void cuentaInexistenteDejaElEvento(CapturedOutput salida) throws Exception {
+    @DisplayName("El 404 a un ADMIN por cuenta inexistente no se registra como acceso denegado")
+    void cuentaInexistenteNoDejaEventoDeAccesoDenegado(CapturedOutput salida) throws Exception {
         // Arrange
-        UUID usuarioId = UUID.randomUUID();
-        autenticarComo(usuarioId, "ADMIN", null);
+        autenticarComo("ADMIN", null);
         when(movimientoRepository.findClienteIdByCuentaId(CUENTA_ID)).thenReturn(Optional.empty());
 
         // Act
@@ -179,9 +178,7 @@ class MovimientoControllerTest {
                 .andExpect(status().isNotFound());
 
         // Assert
-        assertThat(salida.getAll())
-                .contains("evento=ACCESO_HISTORIAL_DENEGADO status=404 cuentaId=" + CUENTA_ID
-                        + " usuarioId=" + usuarioId + " rol=ADMIN");
+        assertThat(salida.getAll()).doesNotContain("evento=ACCESO_HISTORIAL_DENEGADO");
     }
 
     @Test
