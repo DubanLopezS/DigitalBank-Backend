@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("ClienteController - autorizacion por rol")
 class ClienteControllerSecurityTest {
 
-    private static final String RUTA = "/api/clientes";
+    private static final String RUTA = "/api/v1/clientes";
     private static final String TOKEN = "token-de-prueba";
     private static final String BODY_VALIDO = """
             {

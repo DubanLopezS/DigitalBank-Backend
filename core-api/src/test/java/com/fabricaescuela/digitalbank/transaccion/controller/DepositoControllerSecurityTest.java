@@ -39,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class DepositoControllerSecurityTest {
 
     private static final UUID CUENTA_ID = UUID.randomUUID();
-    private static final String RUTA = "/api/cuentas/" + CUENTA_ID + "/depositos";
+    private static final String RUTA = "/api/v1/cuentas/" + CUENTA_ID + "/depositos";
     private static final String TOKEN = "token-de-prueba";
     private static final BigDecimal MONTO = new BigDecimal("50000.25");
     private static final String BODY_VALIDO = "{\"monto\":50000.25,\"origen\":\"EFECTIVO\"}";

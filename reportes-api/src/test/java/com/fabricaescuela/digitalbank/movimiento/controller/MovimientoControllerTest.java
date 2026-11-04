@@ -46,7 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class MovimientoControllerTest {
 
     private static final UUID CUENTA_ID = UUID.randomUUID();
-    private static final String RUTA = "/api/reportes/cuentas/" + CUENTA_ID + "/movimientos";
+    private static final String RUTA = "/api/v1/reportes/cuentas/" + CUENTA_ID + "/movimientos";
     private static final String TOKEN = "token-de-prueba";
 
     @Autowired

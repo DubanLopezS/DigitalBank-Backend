@@ -57,7 +57,7 @@ class GlobalExceptionHandlerTest {
     @DisplayName("Una ApiException conserva su estado y su mensaje de negocio")
     void apiExceptionConservaEstadoYMensaje() {
         // Arrange
-        MockHttpServletRequest request = peticion("/api/cuentas/1234567890/saldo");
+        MockHttpServletRequest request = peticion("/api/v1/cuentas/1234567890/saldo");
 
         // Act
         ResponseEntity<Map<String, Object>> respuesta =
@@ -69,7 +69,7 @@ class GlobalExceptionHandlerTest {
                 .containsEntry("status", 404)
                 .containsEntry("error", "Not Found")
                 .containsEntry("message", "Cuenta no encontrada")
-                .containsEntry("path", "/api/cuentas/1234567890/saldo");
+                .containsEntry("path", "/api/v1/cuentas/1234567890/saldo");
         assertThat(respuesta.getBody().get("timestamp")).isInstanceOf(Instant.class);
     }
 
@@ -77,7 +77,7 @@ class GlobalExceptionHandlerTest {
     @DisplayName("Cada ApiException traduce su propio codigo HTTP")
     void cadaApiExceptionTraduceSuCodigoHttp() {
         // Arrange
-        MockHttpServletRequest request = peticion("/api/clientes");
+        MockHttpServletRequest request = peticion("/api/v1/clientes");
 
         // Act
         ResponseEntity<Map<String, Object>> respuesta =
@@ -92,7 +92,7 @@ class GlobalExceptionHandlerTest {
     @DisplayName("Un error de validacion responde 400 con el mensaje del primer campo invalido")
     void errorDeValidacionRespondeConElPrimerMensaje() throws Exception {
         // Arrange
-        MockHttpServletRequest request = peticion("/api/clientes");
+        MockHttpServletRequest request = peticion("/api/v1/clientes");
         MethodArgumentNotValidException excepcion = errorDeValidacion(
                 "telefono", "El teléfono debe tener 10 dígitos");
 
@@ -104,14 +104,14 @@ class GlobalExceptionHandlerTest {
         assertThat(respuesta.getBody())
                 .containsEntry("status", 400)
                 .containsEntry("message", "El teléfono debe tener 10 dígitos")
-                .containsEntry("path", "/api/clientes");
+                .containsEntry("path", "/api/v1/clientes");
     }
 
     @Test
     @DisplayName("Un error de validacion sin campos concretos usa el mensaje genErico")
     void errorDeValidacionSinCamposUsaMensajeGenerico() throws Exception {
         // Arrange
-        MockHttpServletRequest request = peticion("/api/clientes");
+        MockHttpServletRequest request = peticion("/api/v1/clientes");
         MethodArgumentNotValidException excepcion = errorDeValidacion(null, null);
 
         // Act
@@ -125,7 +125,7 @@ class GlobalExceptionHandlerTest {
     @DisplayName("Un JSON ilegible responde 400 sin filtrar detalles internos")
     void jsonIlegibleResponde400() {
         // Arrange
-        MockHttpServletRequest request = peticion("/api/auth/login");
+        MockHttpServletRequest request = peticion("/api/v1/auth/login");
         HttpMessageNotReadableException excepcion = new HttpMessageNotReadableException(
                 "Unexpected end-of-input at [Source: (String)\"{\"]",
                 new MockHttpInputMessage("{".getBytes(StandardCharsets.UTF_8)));
@@ -137,7 +137,7 @@ class GlobalExceptionHandlerTest {
         assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(respuesta.getBody())
                 .containsEntry("message", "Solicitud inválida")
-                .containsEntry("path", "/api/auth/login");
+                .containsEntry("path", "/api/v1/auth/login");
         assertThat(respuesta.getBody().get("message").toString()).doesNotContain("Source");
     }
 
@@ -145,19 +145,19 @@ class GlobalExceptionHandlerTest {
     @DisplayName("Un 409 de negocio deja un warn con el estado, la excepcion y la ruta")
     void conflictoDejaUnWarn(CapturedOutput salida) {
         // Act
-        handler.handleApiException(new ConflictoDePrueba(), peticion("/api/clientes"));
+        handler.handleApiException(new ConflictoDePrueba(), peticion("/api/v1/clientes"));
 
         // Assert
         assertThat(salida.getAll())
                 .contains("WARN")
-                .contains("evento=ERROR_NEGOCIO status=409 excepcion=ConflictoDePrueba path=/api/clientes");
+                .contains("evento=ERROR_NEGOCIO status=409 excepcion=ConflictoDePrueba path=/api/v1/clientes");
     }
 
     @Test
     @DisplayName("Un 429 de negocio no deja log en el manejador porque ya lo registra el login")
     void unBloqueoNoSeRegistraEnElManejador(CapturedOutput salida) {
         // Act
-        handler.handleApiException(new BloqueoDePrueba(), peticion("/api/auth/login"));
+        handler.handleApiException(new BloqueoDePrueba(), peticion("/api/v1/auth/login"));
 
         // Assert
         assertThat(salida.getAll()).doesNotContain("evento=ERROR_NEGOCIO");
@@ -167,10 +167,10 @@ class GlobalExceptionHandlerTest {
     @DisplayName("Los 400 y 404 no se registran como eventos")
     void erroresDeValidacionYNoEncontradoNoSeRegistran(CapturedOutput salida) throws Exception {
         // Act
-        handler.handleApiException(new MenorDeEdadDePrueba(), peticion("/api/clientes"));
-        handler.handleApiException(new NoEncontradaDePrueba(), peticion("/api/cuentas/1234567890/saldo"));
+        handler.handleApiException(new MenorDeEdadDePrueba(), peticion("/api/v1/clientes"));
+        handler.handleApiException(new NoEncontradaDePrueba(), peticion("/api/v1/cuentas/1234567890/saldo"));
         handler.handleValidation(errorDeValidacion("telefono", "El teléfono debe tener 10 dígitos"),
-                peticion("/api/clientes"));
+                peticion("/api/v1/clientes"));
 
         // Assert
         assertThat(salida.getAll()).doesNotContain("evento=");

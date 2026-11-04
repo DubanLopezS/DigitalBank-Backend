@@ -68,15 +68,15 @@ class RutasProtegidasSinTokenTest {
 
     static Stream<Arguments> rutasProtegidas() {
         return Stream.of(
-                Arguments.of("POST", "/api/cuentas",
+                Arguments.of("POST", "/api/v1/cuentas",
                         "{\"tipoDocumento\":\"CC\",\"numeroDocumento\":\"1020304050\",\"tipoCuenta\":\"AHORROS\"}"),
-                Arguments.of("GET", "/api/cuentas/1234567890/saldo", null),
-                Arguments.of("POST", "/api/cuentas/" + CUENTA_ID + "/retiros", "{\"monto\":1000.00}"),
-                Arguments.of("POST", "/api/cuentas/" + CUENTA_ID + "/transferencias",
+                Arguments.of("GET", "/api/v1/cuentas/1234567890/saldo", null),
+                Arguments.of("POST", "/api/v1/cuentas/" + CUENTA_ID + "/retiros", "{\"monto\":1000.00}"),
+                Arguments.of("POST", "/api/v1/cuentas/" + CUENTA_ID + "/transferencias",
                         "{\"cuentaDestino\":\"1234567890\",\"monto\":1000.00}"),
-                Arguments.of("POST", "/api/cuentas/" + CUENTA_ID + "/bloquear", MOTIVO),
-                Arguments.of("POST", "/api/cuentas/" + CUENTA_ID + "/desbloquear", MOTIVO),
-                Arguments.of("POST", "/api/cuentas/" + CUENTA_ID + "/cerrar", MOTIVO)
+                Arguments.of("POST", "/api/v1/cuentas/" + CUENTA_ID + "/bloquear", MOTIVO),
+                Arguments.of("POST", "/api/v1/cuentas/" + CUENTA_ID + "/desbloquear", MOTIVO),
+                Arguments.of("POST", "/api/v1/cuentas/" + CUENTA_ID + "/cerrar", MOTIVO)
         );
     }
 
