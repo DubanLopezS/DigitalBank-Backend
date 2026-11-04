@@ -17,6 +17,9 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -28,7 +31,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 @DisplayName("DepositoServiceImpl - registro de depositos")
 class DepositoServiceImplTest {
 
@@ -127,6 +130,30 @@ class DepositoServiceImplTest {
                 .isSameAs(excepcion);
 
         verifyNoInteractions(transaccionRepository);
+    }
+
+    @Test
+    @DisplayName("El deposito deja el evento con cuenta, transaccion, tipo y monto, sin los saldos")
+    void elDepositoDejaElEvento(CapturedOutput salida) {
+        // Arrange
+        UUID transaccionId = UUID.randomUUID();
+        when(cuentaService.acreditar(CUENTA_ID, new BigDecimal("50000.00")))
+                .thenReturn(new MovimientoSaldoResponse(CUENTA_ID, new BigDecimal("100000.00"), new BigDecimal("150000.00")));
+        when(transaccionRepository.save(any(Transaccion.class))).thenAnswer(invocacion -> {
+            Transaccion transaccion = invocacion.getArgument(0);
+            ReflectionTestUtils.setField(transaccion, "id", transaccionId);
+            return transaccion;
+        });
+
+        // Act
+        depositoService.registrarDeposito(CUENTA_ID, new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.EFECTIVO));
+
+        // Assert
+        assertThat(salida.getAll())
+                .contains("evento=DEPOSITO_REGISTRADO cuentaId=" + CUENTA_ID + " transaccionId=" + transaccionId
+                        + " tipo=DEPOSITO monto=50000.00")
+                .doesNotContain("100000.00")
+                .doesNotContain("150000.00");
     }
 
     private void prepararAcreditacion(BigDecimal monto, BigDecimal saldoAnterior, BigDecimal saldoNuevo) {

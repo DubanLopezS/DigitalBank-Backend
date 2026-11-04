@@ -12,9 +12,13 @@ import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -31,7 +35,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 @DisplayName("AuthServiceImpl - autenticacion de usuarios")
 class AuthServiceImplTest {
 
@@ -176,6 +180,121 @@ class AuthServiceImplTest {
         assertThat(response.token()).isEqualTo(TOKEN);
         assertThat(usuario.getEstadoSeguridad()).isEqualTo(EstadoSeguridad.ACTIVO);
         assertThat(usuario.getIntentosFallidos()).isZero();
+    }
+
+    @ParameterizedTest(name = "El login con {0} encuentra al usuario")
+    @ValueSource(strings = {"ANA@BANCO.COM", "Ana@Banco.Com", "aNa@bAnCo.CoM", "  ana@banco.com  "})
+    @DisplayName("El login no distingue mayusculas ni espacios en el correo")
+    void loginNoDistingueMayusculasEnElCorreo(String correo) {
+        // Arrange
+        Usuario usuario = usuarioActivo();
+        when(usuarioRepository.findByEmail(EMAIL)).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(PASSWORD, HASH)).thenReturn(true);
+        when(jwtService.generarToken(usuario)).thenReturn(TOKEN);
+
+        // Act
+        LoginResponse response = authService.login(new LoginRequest(correo, PASSWORD));
+
+        // Assert
+        assertThat(response.token()).isEqualTo(TOKEN);
+        verify(usuarioRepository).findByEmail(EMAIL);
+    }
+
+    @Test
+    @DisplayName("Un login exitoso registra el evento con usuarioId y rol, sin correo ni contrasena")
+    void loginExitosoRegistraElEvento(CapturedOutput salida) {
+        // Arrange
+        Usuario usuario = usuarioActivo();
+        when(usuarioRepository.findByEmail(EMAIL)).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(PASSWORD, HASH)).thenReturn(true);
+        when(jwtService.generarToken(usuario)).thenReturn(TOKEN);
+
+        // Act
+        authService.login(new LoginRequest(EMAIL, PASSWORD));
+
+        // Assert
+        assertThat(salida.getAll())
+                .contains("evento=LOGIN_EXITOSO usuarioId=" + usuario.getId() + " rol=CLIENTE")
+                .doesNotContain(PASSWORD)
+                .doesNotContain(EMAIL)
+                .doesNotContain(HASH)
+                .doesNotContain(TOKEN);
+    }
+
+    @Test
+    @DisplayName("Un login fallido con correo existente registra el usuarioId y los intentos, sin la contrasena")
+    void loginFallidoRegistraElEvento(CapturedOutput salida) {
+        // Arrange
+        Usuario usuario = usuarioActivo();
+        when(usuarioRepository.findByEmail(EMAIL)).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches("otra-clave", HASH)).thenReturn(false);
+
+        // Act
+        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, "otra-clave")))
+                .isInstanceOf(CredencialesInvalidasException.class);
+
+        // Assert
+        assertThat(salida.getAll())
+                .contains("evento=LOGIN_FALLIDO motivo=CREDENCIALES_INVALIDAS usuarioId="
+                        + usuario.getId() + " intentos=1")
+                .doesNotContain("evento=USUARIO_BLOQUEADO_TEMPORAL")
+                .doesNotContain("otra-clave")
+                .doesNotContain(EMAIL);
+    }
+
+    @Test
+    @DisplayName("Un correo no registrado deja el evento sin el correo")
+    void correoNoRegistradoRegistraElEventoSinElCorreo(CapturedOutput salida) {
+        // Arrange
+        when(usuarioRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());
+
+        // Act
+        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, PASSWORD)))
+                .isInstanceOf(CredencialesInvalidasException.class);
+
+        // Assert
+        assertThat(salida.getAll())
+                .contains("evento=LOGIN_FALLIDO motivo=CORREO_NO_REGISTRADO")
+                .doesNotContain(EMAIL)
+                .doesNotContain(PASSWORD);
+    }
+
+    @Test
+    @DisplayName("El tercer fallo registra el bloqueo temporal con el usuarioId")
+    void tercerFalloRegistraElBloqueoTemporal(CapturedOutput salida) {
+        // Arrange
+        Usuario usuario = usuarioActivo();
+        usuario.registrarIntentoFallido();
+        usuario.registrarIntentoFallido();
+        when(usuarioRepository.findByEmail(EMAIL)).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches("otra-clave", HASH)).thenReturn(false);
+
+        // Act
+        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, "otra-clave")))
+                .isInstanceOf(CredencialesInvalidasException.class);
+
+        // Assert
+        assertThat(salida.getAll())
+                .contains("evento=LOGIN_FALLIDO motivo=CREDENCIALES_INVALIDAS usuarioId="
+                        + usuario.getId() + " intentos=3")
+                .contains("evento=USUARIO_BLOQUEADO_TEMPORAL usuarioId=" + usuario.getId());
+    }
+
+    @Test
+    @DisplayName("Un intento con el usuario bloqueado registra el rechazo con el usuarioId")
+    void intentoConUsuarioBloqueadoRegistraElRechazo(CapturedOutput salida) {
+        // Arrange
+        Usuario usuario = usuarioBloqueadoHace(10);
+        when(usuarioRepository.findByEmail(EMAIL)).thenReturn(Optional.of(usuario));
+
+        // Act
+        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, PASSWORD)))
+                .isInstanceOf(CuentaBloqueadaException.class);
+
+        // Assert
+        assertThat(salida.getAll())
+                .contains("evento=LOGIN_RECHAZADO_USUARIO_BLOQUEADO usuarioId=" + usuario.getId())
+                .doesNotContain(EMAIL);
     }
 
     private Usuario usuarioActivo() {

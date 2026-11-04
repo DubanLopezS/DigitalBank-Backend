@@ -7,6 +7,9 @@ import com.fabricaescuela.digitalbank.cliente.entity.Cliente;
 import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
 import com.fabricaescuela.digitalbank.cliente.exception.ClienteMenorDeEdadException;
 import com.fabricaescuela.digitalbank.cliente.exception.ClienteYaExisteException;
+import com.fabricaescuela.digitalbank.core.util.NormalizadorCorreo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.fabricaescuela.digitalbank.cliente.interfaces.repositories.IClienteRepository;
@@ -20,6 +23,7 @@ import java.util.Optional;
 @Service
 public class ClienteServiceImpl implements IClienteService {
 
+    private static final Logger log = LoggerFactory.getLogger(ClienteServiceImpl.class);
     private static final int EDAD_MINIMA = 18;
 
     private final IClienteRepository clienteRepository;
@@ -33,8 +37,10 @@ public class ClienteServiceImpl implements IClienteService {
     @Override
     @Transactional
     public ClienteResponse registrarCliente(ClienteRegistroRequest request) {
+        String email = NormalizadorCorreo.normalizar(request.email());
+
         validarDocumentoUnico(request.tipoDocumento(), request.numeroDocumento());
-        validarEmailUnico(request.email());
+        validarEmailUnico(email);
         validarMayoriaDeEdad(request.fechaNacimiento());
 
         Cliente cliente = new Cliente(
@@ -44,7 +50,7 @@ public class ClienteServiceImpl implements IClienteService {
                 request.apellidos(),
                 request.fechaNacimiento(),
                 request.telefono(),
-                request.email()
+                email
         );
         Cliente clienteGuardado = clienteRepository.save(cliente);
 
@@ -54,6 +60,7 @@ public class ClienteServiceImpl implements IClienteService {
                 request.password()
         );
 
+        log.info("evento=CLIENTE_REGISTRADO clienteId={}", clienteGuardado.getId());
         return ClienteResponse.from(clienteGuardado);
     }
 

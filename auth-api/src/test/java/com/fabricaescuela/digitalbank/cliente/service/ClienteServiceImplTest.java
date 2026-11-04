@@ -13,9 +13,12 @@ import com.fabricaescuela.digitalbank.cliente.interfaces.repositories.IClienteRe
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -31,7 +34,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 @DisplayName("ClienteServiceImpl - registro de clientes")
 class ClienteServiceImplTest {
 
@@ -223,6 +226,73 @@ class ClienteServiceImplTest {
         assertThat(resumen).isEmpty();
     }
 
+    @Test
+    @DisplayName("Un correo en mayusculas que ya existe en minusculas responde 409 y no persiste nada")
+    void correoEnMayusculasYaRegistradoResponde409() {
+        // Arrange
+        when(clienteRepository.existsByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO)).thenReturn(false);
+        when(clienteRepository.existsByEmail(EMAIL)).thenReturn(true);
+
+        // Act & Assert
+        assertThatThrownBy(() -> clienteService.registrarCliente(
+                requestConEmail("ANA@BANCO.COM", LocalDate.now().minusYears(30))))
+                .isInstanceOf(ClienteYaExisteException.class)
+                .hasMessage("El cliente ya existe")
+                .extracting(ex -> ((ClienteYaExisteException) ex).getStatus())
+                .isEqualTo(HttpStatus.CONFLICT);
+
+        verify(clienteRepository, never()).save(any());
+        verifyNoInteractions(credencialesService);
+    }
+
+    @Test
+    @DisplayName("El correo se guarda sin espacios y en minusculas en el cliente y en sus credenciales")
+    void elCorreoSeGuardaNormalizado() {
+        // Arrange
+        UUID idGenerado = UUID.randomUUID();
+        when(clienteRepository.existsByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO)).thenReturn(false);
+        when(clienteRepository.existsByEmail(EMAIL)).thenReturn(false);
+        when(clienteRepository.save(any(Cliente.class))).thenAnswer(invocacion -> {
+            Cliente cliente = invocacion.getArgument(0);
+            ReflectionTestUtils.setField(cliente, "id", idGenerado);
+            return cliente;
+        });
+        ArgumentCaptor<Cliente> captor = ArgumentCaptor.forClass(Cliente.class);
+
+        // Act
+        clienteService.registrarCliente(requestConEmail("  Ana@Banco.COM ", LocalDate.now().minusYears(30)));
+
+        // Assert
+        verify(clienteRepository).save(captor.capture());
+        assertThat(captor.getValue().getEmail()).isEqualTo(EMAIL);
+        verify(credencialesService).registrarCredencialesCliente(idGenerado, EMAIL, PASSWORD);
+    }
+
+    @Test
+    @DisplayName("El registro deja el evento con el clienteId y sin datos personales")
+    void elRegistroDejaElEventoSinDatosPersonales(CapturedOutput salida) {
+        // Arrange
+        UUID idGenerado = UUID.randomUUID();
+        when(clienteRepository.existsByTipoDocumentoAndNumeroDocumento(TipoDocumento.CC, DOCUMENTO)).thenReturn(false);
+        when(clienteRepository.existsByEmail(EMAIL)).thenReturn(false);
+        when(clienteRepository.save(any(Cliente.class))).thenAnswer(invocacion -> {
+            Cliente cliente = invocacion.getArgument(0);
+            ReflectionTestUtils.setField(cliente, "id", idGenerado);
+            return cliente;
+        });
+
+        // Act
+        clienteService.registrarCliente(request(LocalDate.now().minusYears(30)));
+
+        // Assert
+        assertThat(salida.getAll())
+                .contains("evento=CLIENTE_REGISTRADO clienteId=" + idGenerado)
+                .doesNotContain(EMAIL)
+                .doesNotContain(DOCUMENTO)
+                .doesNotContain(PASSWORD)
+                .doesNotContain("Gomez");
+    }
+
     private Cliente clienteConEstado(UUID id, EstadoCliente estado) {
         Cliente cliente = new Cliente(
                 TipoDocumento.CC, DOCUMENTO, "Ana", "Gomez",
@@ -233,8 +303,12 @@ class ClienteServiceImplTest {
     }
 
     private ClienteRegistroRequest request(LocalDate fechaNacimiento) {
+        return requestConEmail(EMAIL, fechaNacimiento);
+    }
+
+    private ClienteRegistroRequest requestConEmail(String email, LocalDate fechaNacimiento) {
         return new ClienteRegistroRequest(
                 TipoDocumento.CC, DOCUMENTO, "Ana", "Gomez",
-                fechaNacimiento, "3001234567", EMAIL, PASSWORD);
+                fechaNacimiento, "3001234567", email, PASSWORD);
     }
 }

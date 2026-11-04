@@ -12,6 +12,8 @@ import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoEncontradaExcepti
 import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ICuentaRepository;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.IMovimientoAdministrativoRepository;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.services.IEstadoCuentaService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +21,8 @@ import java.util.UUID;
 
 @Service
 public class EstadoCuentaServiceImpl implements IEstadoCuentaService {
+
+    private static final Logger log = LoggerFactory.getLogger(EstadoCuentaServiceImpl.class);
 
     private final ICuentaRepository cuentaRepository;
     private final IMovimientoAdministrativoRepository movimientoRepository;
@@ -99,6 +103,8 @@ public class EstadoCuentaServiceImpl implements IEstadoCuentaService {
                 MovimientoAdministrativoCuenta.registrar(cuenta.getId(), usuarioId, accion,
                         estadoAnterior, cuenta.getEstado(), motivo));
 
+        log.info("evento=CAMBIO_ESTADO_CUENTA accion={} cuentaId={} usuarioId={} estadoAnterior={} estadoNuevo={}",
+                accion, cuenta.getId(), usuarioId, estadoAnterior, cuenta.getEstado());
         return new CambioEstadoCuentaResponse(
                 cuenta.getNumeroCuenta(),
                 accion,

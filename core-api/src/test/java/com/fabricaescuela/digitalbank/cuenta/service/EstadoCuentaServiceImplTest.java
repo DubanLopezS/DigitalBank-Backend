@@ -20,6 +20,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -34,7 +36,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 @DisplayName("EstadoCuentaServiceImpl - bloqueo, desbloqueo y cierre de cuentas")
 class EstadoCuentaServiceImplTest {
 
@@ -376,6 +378,27 @@ class EstadoCuentaServiceImplTest {
         
         verify(cuentaRepository).findByIdForUpdate(CUENTA_ID);
         verify(cuentaRepository, never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("El bloqueo deja el evento con cuenta, responsable y estados, sin motivo ni saldo")
+    void elBloqueoDejaElEvento(CapturedOutput salida) {
+        // Arrange
+        Cuenta cuenta = cuenta(EstadoCuenta.ACTIVA, SALDO_CON_DINERO);
+        ReflectionTestUtils.setField(cuenta, "id", CUENTA_ID);
+        when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
+        when(movimientoRepository.save(any(MovimientoAdministrativoCuenta.class)))
+                .thenAnswer(invocacion -> invocacion.getArgument(0));
+
+        // Act
+        estadoCuentaService.bloquear(CUENTA_ID, USUARIO_ID, new CambioEstadoCuentaRequest(MOTIVO));
+
+        // Assert
+        assertThat(salida.getAll())
+                .contains("evento=CAMBIO_ESTADO_CUENTA accion=BLOQUEO cuentaId=" + CUENTA_ID
+                        + " usuarioId=" + USUARIO_ID + " estadoAnterior=ACTIVA estadoNuevo=BLOQUEADA")
+                .doesNotContain(MOTIVO)
+                .doesNotContain("100000.00");
     }
 
     private Cuenta cuenta(EstadoCuenta estado, BigDecimal saldo) {

@@ -9,6 +9,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigDecimal;
 import java.util.Set;
@@ -88,5 +90,49 @@ class DepositoRequestValidationTest {
         assertThat(violaciones)
                 .extracting(violacion -> violacion.getPropertyPath().toString())
                 .containsExactlyInAnyOrder("monto", "origen");
+    }
+
+    @ParameterizedTest(name = "El monto {0} es rechazado")
+    @ValueSource(strings = {"0.004", "10.005", "1500.255"})
+    @DisplayName("Un monto con tres decimales es rechazado con Monto invalido")
+    void montoConTresDecimalesEsRechazado(String monto) {
+        // Arrange
+        DepositoRequest request = new DepositoRequest(new BigDecimal(monto), OrigenDeposito.EFECTIVO);
+
+        // Act
+        Set<ConstraintViolation<DepositoRequest>> violaciones = validator.validate(request);
+
+        // Assert
+        assertThat(violaciones)
+                .extracting(ConstraintViolation::getMessage)
+                .containsExactly("Monto inválido");
+    }
+
+    @Test
+    @DisplayName("Un monto con dos decimales sigue siendo valido")
+    void montoConDosDecimalesEsValido() {
+        // Arrange
+        DepositoRequest request = new DepositoRequest(new BigDecimal("1500.25"), OrigenDeposito.EFECTIVO);
+
+        // Act
+        Set<ConstraintViolation<DepositoRequest>> violaciones = validator.validate(request);
+
+        // Assert
+        assertThat(violaciones).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Un monto con mas de 13 digitos enteros no cabe en NUMERIC(15,2) y es rechazado")
+    void montoConMasDeTreceEnterosEsRechazado() {
+        // Arrange
+        DepositoRequest request = new DepositoRequest(new BigDecimal("12345678901234.00"), OrigenDeposito.EFECTIVO);
+
+        // Act
+        Set<ConstraintViolation<DepositoRequest>> violaciones = validator.validate(request);
+
+        // Assert
+        assertThat(violaciones)
+                .extracting(ConstraintViolation::getMessage)
+                .containsExactly("Monto inválido");
     }
 }
