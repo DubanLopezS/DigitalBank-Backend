@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class ClienteNoEncontradoException extends ApiException {
     public ClienteNoEncontradoException(String message) {
-        super(HttpStatus.NOT_FOUND, message);
+        super(HttpStatus.NOT_FOUND, "CLIENTE_NO_ENCONTRADO", message);
     }
 }

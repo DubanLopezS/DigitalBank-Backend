@@ -4,6 +4,7 @@ package com.fabricaescuela.digitalbank.core.exception;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.MDC;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.core.MethodParameter;
@@ -16,6 +17,8 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+
+import com.fabricaescuela.digitalbank.core.web.TraceIdFilter;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -31,25 +34,25 @@ class GlobalExceptionHandlerTest {
 
     static class ConflictoDePrueba extends ApiException {
         ConflictoDePrueba() {
-            super(HttpStatus.CONFLICT, "El cliente ya existe");
+            super(HttpStatus.CONFLICT, "CONFLICTO_DE_PRUEBA", "El cliente ya existe");
         }
     }
 
     static class BloqueoDePrueba extends ApiException {
         BloqueoDePrueba() {
-            super(HttpStatus.TOO_MANY_REQUESTS, "Cuenta bloqueada temporalmente");
+            super(HttpStatus.TOO_MANY_REQUESTS, "BLOQUEO_DE_PRUEBA", "Cuenta bloqueada temporalmente");
         }
     }
 
     static class NoEncontradaDePrueba extends ApiException {
         NoEncontradaDePrueba() {
-            super(HttpStatus.NOT_FOUND, "Cuenta no encontrada");
+            super(HttpStatus.NOT_FOUND, "NO_ENCONTRADA_DE_PRUEBA", "Cuenta no encontrada");
         }
     }
 
     static class MenorDeEdadDePrueba extends ApiException {
         MenorDeEdadDePrueba() {
-            super(HttpStatus.BAD_REQUEST, "El cliente debe ser mayor de edad");
+            super(HttpStatus.BAD_REQUEST, "MENOR_DE_EDAD_DE_PRUEBA", "El cliente debe ser mayor de edad");
         }
     }
 
@@ -68,6 +71,7 @@ class GlobalExceptionHandlerTest {
         assertThat(respuesta.getBody())
                 .containsEntry("status", 404)
                 .containsEntry("error", "Not Found")
+                .containsEntry("errorCode", "NO_ENCONTRADA_DE_PRUEBA")
                 .containsEntry("message", "Cuenta no encontrada")
                 .containsEntry("path", "/api/v1/cuentas/1234567890/saldo");
         assertThat(respuesta.getBody().get("timestamp")).isInstanceOf(Instant.class);
@@ -103,6 +107,7 @@ class GlobalExceptionHandlerTest {
         assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(respuesta.getBody())
                 .containsEntry("status", 400)
+                .containsEntry("errorCode", "DATOS_INVALIDOS")
                 .containsEntry("message", "El teléfono debe tener 10 dígitos")
                 .containsEntry("path", "/api/v1/clientes");
     }
@@ -136,6 +141,7 @@ class GlobalExceptionHandlerTest {
         // Assert
         assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(respuesta.getBody())
+                .containsEntry("errorCode", "SOLICITUD_INVALIDA")
                 .containsEntry("message", "Solicitud inválida")
                 .containsEntry("path", "/api/v1/auth/login");
         assertThat(respuesta.getBody().get("message").toString()).doesNotContain("Source");
@@ -195,5 +201,22 @@ class GlobalExceptionHandlerTest {
     @SuppressWarnings("unused")
     private void metodoDeReferencia(String payload) {
         // Solo existe para construir un MethodParameter valido en las pruebas.
+    }
+
+    @Test
+    @DisplayName("El cuerpo del error incluye el traceId de la peticion")
+    void elErrorIncluyeElTraceId() {
+        // Arrange
+        MDC.put(TraceIdFilter.MDC_KEY, "abc-12345678");
+        try {
+            // Act
+            ResponseEntity<Map<String, Object>> respuesta =
+                    handler.handleApiException(new NoEncontradaDePrueba(), peticion("/api/v1/cuentas/1"));
+
+            // Assert
+            assertThat(respuesta.getBody()).containsEntry("traceId", "abc-12345678");
+        } finally {
+            MDC.remove(TraceIdFilter.MDC_KEY);
+        }
     }
 }

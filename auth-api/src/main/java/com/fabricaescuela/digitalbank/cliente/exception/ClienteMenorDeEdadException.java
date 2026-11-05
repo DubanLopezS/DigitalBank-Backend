@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class ClienteMenorDeEdadException extends ApiException {
     public ClienteMenorDeEdadException(String message) {
-        super(HttpStatus.BAD_REQUEST, message);
+        super(HttpStatus.BAD_REQUEST, "CLIENTE_MENOR_DE_EDAD", message);
     }
 }

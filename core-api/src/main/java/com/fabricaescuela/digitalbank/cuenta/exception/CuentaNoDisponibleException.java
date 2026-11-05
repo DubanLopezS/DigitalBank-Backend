@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class CuentaNoDisponibleException extends ApiException {
     public CuentaNoDisponibleException(String message) {
-        super(HttpStatus.CONFLICT, message);
+        super(HttpStatus.CONFLICT, "CUENTA_NO_DISPONIBLE", message);
     }
 }

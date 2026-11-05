@@ -4,6 +4,9 @@ import com.fabricaescuela.digitalbank.core.config.SecurityConfig;
 import com.fabricaescuela.digitalbank.core.exception.GlobalExceptionHandler;
 import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import com.fabricaescuela.digitalbank.core.security.JwtAuthenticationFilter;
+import com.fabricaescuela.digitalbank.core.web.ApiAccessDeniedHandler;
+import com.fabricaescuela.digitalbank.core.web.ApiAuthenticationEntryPoint;
+import com.fabricaescuela.digitalbank.core.web.ErrorResponseWriter;
 import com.fabricaescuela.digitalbank.movimiento.dto.MovimientoResponse;
 import com.fabricaescuela.digitalbank.movimiento.interfaces.repositories.IMovimientoRepository;
 import com.fabricaescuela.digitalbank.movimiento.service.MovimientoServiceImpl;
@@ -40,7 +43,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(MovimientoController.class)
 @ImportAutoConfiguration(SecurityFilterAutoConfiguration.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class, MovimientoServiceImpl.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class,
+        MovimientoServiceImpl.class,
+        ApiAuthenticationEntryPoint.class, ApiAccessDeniedHandler.class, ErrorResponseWriter.class})
 @ExtendWith(OutputCaptureExtension.class)
 @DisplayName("MovimientoController - historial de movimientos por HTTP")
 class MovimientoControllerTest {

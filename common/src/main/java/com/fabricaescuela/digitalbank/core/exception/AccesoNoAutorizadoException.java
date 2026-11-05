@@ -4,6 +4,6 @@ import org.springframework.http.HttpStatus;
 
 public class AccesoNoAutorizadoException extends ApiException {
     public AccesoNoAutorizadoException() {
-        super(HttpStatus.FORBIDDEN, "Acceso no autorizado");
+        super(HttpStatus.FORBIDDEN, "ACCESO_NO_AUTORIZADO", "Acceso no autorizado");
     }
 }

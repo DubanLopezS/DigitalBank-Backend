@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class ClienteYaExisteException extends ApiException {
     public ClienteYaExisteException(String message) {
-        super(HttpStatus.CONFLICT, message);
+        super(HttpStatus.CONFLICT, "CLIENTE_YA_EXISTE", message);
     }
 }

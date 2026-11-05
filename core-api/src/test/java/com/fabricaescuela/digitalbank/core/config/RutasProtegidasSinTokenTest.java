@@ -3,6 +3,9 @@ package com.fabricaescuela.digitalbank.core.config;
 import com.fabricaescuela.digitalbank.core.exception.GlobalExceptionHandler;
 import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import com.fabricaescuela.digitalbank.core.security.JwtAuthenticationFilter;
+import com.fabricaescuela.digitalbank.core.web.ApiAccessDeniedHandler;
+import com.fabricaescuela.digitalbank.core.web.ApiAuthenticationEntryPoint;
+import com.fabricaescuela.digitalbank.core.web.ErrorResponseWriter;
 import com.fabricaescuela.digitalbank.cuenta.controller.CuentaController;
 import com.fabricaescuela.digitalbank.cuenta.controller.EstadoCuentaController;
 import com.fabricaescuela.digitalbank.cuenta.controller.SaldoController;
@@ -38,7 +41,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest({CuentaController.class, SaldoController.class, RetiroController.class,
         TransferenciaController.class, EstadoCuentaController.class})
 @ImportAutoConfiguration(SecurityFilterAutoConfiguration.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class,
+        ApiAuthenticationEntryPoint.class, ApiAccessDeniedHandler.class, ErrorResponseWriter.class})
 @DisplayName("SecurityConfig - rutas protegidas de core-api sin token")
 class RutasProtegidasSinTokenTest {
 

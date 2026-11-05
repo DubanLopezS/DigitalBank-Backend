@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class CuentaNoEncontradaException extends ApiException {
     public CuentaNoEncontradaException() {
-        super(HttpStatus.NOT_FOUND, "Cuenta no encontrada");
+        super(HttpStatus.NOT_FOUND, "CUENTA_NO_ENCONTRADA", "Cuenta no encontrada");
     }
 }

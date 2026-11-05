@@ -4,6 +4,9 @@ import com.fabricaescuela.digitalbank.core.config.SecurityConfig;
 import com.fabricaescuela.digitalbank.core.exception.GlobalExceptionHandler;
 import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import com.fabricaescuela.digitalbank.core.security.JwtAuthenticationFilter;
+import com.fabricaescuela.digitalbank.core.web.ApiAccessDeniedHandler;
+import com.fabricaescuela.digitalbank.core.web.ApiAuthenticationEntryPoint;
+import com.fabricaescuela.digitalbank.core.web.ErrorResponseWriter;
 import com.fabricaescuela.digitalbank.cuenta.dto.CambioEstadoCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CambioEstadoCuentaResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.EstadoCuenta;
@@ -32,7 +35,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(EstadoCuentaController.class)
 @ImportAutoConfiguration(SecurityFilterAutoConfiguration.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class,
+        ApiAuthenticationEntryPoint.class, ApiAccessDeniedHandler.class, ErrorResponseWriter.class})
 @DisplayName("EstadoCuentaController - autorizacion por rol")
 class EstadoCuentaControllerSecurityTest {
 

@@ -8,6 +8,10 @@ import com.fabricaescuela.digitalbank.core.config.SecurityConfig;
 import com.fabricaescuela.digitalbank.core.exception.GlobalExceptionHandler;
 import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import com.fabricaescuela.digitalbank.core.security.JwtAuthenticationFilter;
+import com.fabricaescuela.digitalbank.core.web.ApiAccessDeniedHandler;
+import com.fabricaescuela.digitalbank.core.web.ApiAuthenticationEntryPoint;
+import com.fabricaescuela.digitalbank.core.web.ErrorResponseWriter;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +37,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(ClienteController.class)
 @ImportAutoConfiguration(SecurityFilterAutoConfiguration.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class,
+        ApiAuthenticationEntryPoint.class, ApiAccessDeniedHandler.class, ErrorResponseWriter.class})
 @DisplayName("ClienteController - autorizacion por rol")
 class ClienteControllerSecurityTest {
 
@@ -41,14 +46,14 @@ class ClienteControllerSecurityTest {
     private static final String TOKEN = "token-de-prueba";
     private static final String BODY_VALIDO = """
             {
-              "tipoDocumento": "CC",
-              "numeroDocumento": "1020304050",
-              "nombres": "Ana",
-              "apellidos": "Gomez",
-              "fechaNacimiento": "1995-05-10",
-              "telefono": "3001234567",
-              "email": "ana@banco.com",
-              "password": "Password123"
+                "tipoDocumento": "CC",
+                "numeroDocumento": "1020304050",
+                "nombres": "Ana",
+                "apellidos": "Gomez",
+                "fechaNacimiento": "1995-05-10",
+                "telefono": "3001234567",
+                "email": "ana@banco.com",
+                "password": "Password123"
             }
             """;
 
@@ -69,6 +74,7 @@ class ClienteControllerSecurityTest {
                         .content(BODY_VALIDO))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.errorCode").value("NO_AUTENTICADO"))
                 .andExpect(jsonPath("$.path").value(RUTA));
         verifyNoInteractions(clienteService);
     }
@@ -86,6 +92,7 @@ class ClienteControllerSecurityTest {
                         .content(BODY_VALIDO))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.errorCode").value("ACCESO_NO_AUTORIZADO"))
                 .andExpect(jsonPath("$.path").value(RUTA));
         verifyNoInteractions(clienteService);
     }
@@ -103,6 +110,7 @@ class ClienteControllerSecurityTest {
                         .content(BODY_VALIDO))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.errorCode").value("ACCESO_NO_AUTORIZADO"))
                 .andExpect(jsonPath("$.path").value(RUTA));
         verifyNoInteractions(clienteService);
     }
