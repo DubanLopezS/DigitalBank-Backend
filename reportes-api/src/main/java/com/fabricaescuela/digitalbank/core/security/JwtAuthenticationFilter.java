@@ -20,7 +20,7 @@ import java.util.UUID;
  * para que @PreAuthorize pueda evaluar permisos.
  */
 @Component
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter implements FiltroAutenticacionJwt {
 
     private final IJwtService jwtService;
 
