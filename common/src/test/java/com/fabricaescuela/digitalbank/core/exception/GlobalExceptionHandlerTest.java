@@ -1,6 +1,6 @@
 package com.fabricaescuela.digitalbank.core.exception;
 
-
+import com.fabricaescuela.digitalbank.core.web.TraceIdFilter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,18 +13,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-
-import com.fabricaescuela.digitalbank.core.web.TraceIdFilter;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 
 @ExtendWith(OutputCaptureExtension.class)
 @DisplayName("GlobalExceptionHandler - cuerpo uniforme de error")
@@ -113,7 +118,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("Un error de validacion sin campos concretos usa el mensaje genErico")
+    @DisplayName("Un error de validacion sin campos concretos usa el mensaje generico")
     void errorDeValidacionSinCamposUsaMensajeGenerico() throws Exception {
         // Arrange
         MockHttpServletRequest request = peticion("/api/v1/clientes");
@@ -182,6 +187,99 @@ class GlobalExceptionHandlerTest {
         assertThat(salida.getAll()).doesNotContain("evento=");
     }
 
+    @Test
+    @DisplayName("El cuerpo del error incluye el traceId de la peticion")
+    void elErrorIncluyeElTraceId() {
+        // Arrange
+        MDC.put(TraceIdFilter.MDC_KEY, "abc-12345678");
+        try {
+            // Act
+            ResponseEntity<Map<String, Object>> respuesta =
+                    handler.handleApiException(new NoEncontradaDePrueba(), peticion("/api/v1/cuentas/1"));
+
+            // Assert
+            assertThat(respuesta.getBody()).containsEntry("traceId", "abc-12345678");
+        } finally {
+            MDC.remove(TraceIdFilter.MDC_KEY);
+        }
+    }
+
+    @Test
+    @DisplayName("Una ruta inexistente responde 404 con errorCode")
+    void rutaInexistenteResponde404() {
+        // Arrange
+        MockHttpServletRequest request = peticion("/api/v1/loquesea");
+        NoResourceFoundException excepcion = mock(NoResourceFoundException.class);
+
+        // Act
+        ResponseEntity<Map<String, Object>> respuesta = handler.handleRutaInexistente(excepcion, request);
+
+        // Assert
+        assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(respuesta.getBody())
+                .containsEntry("errorCode", "RECURSO_NO_ENCONTRADO")
+                .containsEntry("message", "Recurso no encontrado")
+                .containsKey("traceId");
+    }
+
+    @Test
+    @DisplayName("Un metodo incorrecto responde 405 con errorCode")
+    void metodoIncorrectoResponde405() {
+        // Arrange
+        MockHttpServletRequest request = peticion("/api/v1/auth/login");
+
+        // Act
+        ResponseEntity<Map<String, Object>> respuesta = handler.handleMetodoNoPermitido(
+                new HttpRequestMethodNotSupportedException("GET"), request);
+
+        // Assert
+        assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+        assertThat(respuesta.getBody()).containsEntry("errorCode", "METODO_NO_PERMITIDO");
+    }
+
+    @Test
+    @DisplayName("Una fecha con formato invalido responde 400 sin repetir el valor")
+    void fechaInvalidaResponde400() {
+        // Arrange
+        MockHttpServletRequest request = peticion("/api/v1/reportes/cuentas/1/movimientos");
+        MethodArgumentTypeMismatchException excepcion = new MethodArgumentTypeMismatchException(
+                "2026-13-01", LocalDate.class, "fecha_inicio", null, new IllegalArgumentException());
+
+        // Act
+        ResponseEntity<Map<String, Object>> respuesta = handler.handleTipoParametro(excepcion, request);
+
+        // Assert
+        assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(respuesta.getBody())
+                .containsEntry("errorCode", "PARAMETRO_INVALIDO")
+                .containsEntry("message", "Parámetro inválido: fecha_inicio");
+        assertThat(respuesta.getBody().get("message").toString()).doesNotContain("2026-13-01");
+    }
+
+    @Test
+    @DisplayName("Un error inesperado responde 500 sin filtrar el detalle")
+    void errorInesperadoResponde500(CapturedOutput salida) {
+        // Act
+        ResponseEntity<Map<String, Object>> respuesta = handler.handleInesperado(
+                new IllegalStateException("detalle interno secreto"), peticion("/api/v1/cuentas"));
+
+        // Assert
+        assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(respuesta.getBody())
+                .containsEntry("errorCode", "ERROR_INTERNO")
+                .containsEntry("message", "Error interno del servidor");
+        assertThat(respuesta.getBody().toString()).doesNotContain("secreto");
+        assertThat(salida.getAll()).contains("evento=ERROR_INESPERADO");
+    }
+
+    @Test
+    @DisplayName("Un error de seguridad se relanza para que lo resuelva el handler de seguridad")
+    void errorDeSeguridadSeRelanza() {
+        // Act + Assert
+        assertThatThrownBy(() -> handler.dejarPasarSeguridad(new AccessDeniedException("x")))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
     private MockHttpServletRequest peticion(String uri) {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRequestURI(uri);
@@ -201,22 +299,5 @@ class GlobalExceptionHandlerTest {
     @SuppressWarnings("unused")
     private void metodoDeReferencia(String payload) {
         // Solo existe para construir un MethodParameter valido en las pruebas.
-    }
-
-    @Test
-    @DisplayName("El cuerpo del error incluye el traceId de la peticion")
-    void elErrorIncluyeElTraceId() {
-        // Arrange
-        MDC.put(TraceIdFilter.MDC_KEY, "abc-12345678");
-        try {
-            // Act
-            ResponseEntity<Map<String, Object>> respuesta =
-                    handler.handleApiException(new NoEncontradaDePrueba(), peticion("/api/v1/cuentas/1"));
-
-            // Assert
-            assertThat(respuesta.getBody()).containsEntry("traceId", "abc-12345678");
-        } finally {
-            MDC.remove(TraceIdFilter.MDC_KEY);
-        }
     }
 }
