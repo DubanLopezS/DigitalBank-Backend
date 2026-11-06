@@ -6,6 +6,8 @@
 
 **Nota de actualización (25 de octubre de 2026):** lo actualizamos después de la HU-13. `reportes-api` ya tiene seguridad, conexión a la base y el endpoint de historial, y valida tokens igual que `core-api`. También volvimos a contar las clases repetidas, ahora con `reportes-api`, y corregimos lo que decía de `SecurityConfig`, que no es igual en las tres APIs.
 
+**Nota de actualización (6 de noviembre de 2026):** en el Sprint 3 el `SecurityConfig` de las tres APIs se movió a `common`, y `common` ahora también tiene el filtro de `traceId` y las respuestas de error 401 y 403 (ver ADR-0013). Por eso el `SecurityConfig` ya no figura entre las clases repetidas, y `common` ya no tiene solo excepciones. Dejamos el resto del texto como estaba.
+
 ## Contexto
 
 Hasta el Sprint 1 el backend fue un monolito modular: un solo proceso con los módulos `auth`, `cliente`, `cuenta` y `transaccion`. Para el Sprint 2 el requerimiento es separarlo en Web APIs independientes (procesos distintos), sin llegar a microservicios estrictos. Con eso aparecieron varias preguntas: dónde vive cada módulo, quién emite los tokens, quién corre las migraciones y cómo compartimos el código común.
@@ -25,7 +27,7 @@ Un solo repositorio (monorepo) con un `pom.xml` padre y cuatro módulos:
 - `auth-api`: módulos `auth` y `cliente`. Es la única que crea tokens. Como `cliente` vive acá, el registro sigue siendo una sola transacción. El nombre no describe todo lo que contiene, pero lo aceptamos.
 - `core-api`: módulos `cuenta` y `transaccion`. También tiene un paquete `cliente` pequeño, con `ClienteConsultaAdapter` para leer clientes de la base.
 - `reportes-api`: solo consultas, de solo lectura. Tiene el módulo `movimiento` con el historial de movimientos de una cuenta (`GET /api/v1/reportes/cuentas/{cuentaId}/movimientos`, HU-13). Lee la base con `JdbcClient`, sin JPA ni entidades (ADR-0011).
-- `common`: lo que comparten las tres (por ahora, manejo de excepciones).
+- `common`: lo que comparten las tres. Empezó con el manejo de excepciones y en el Sprint 3 sumó el filtro de `traceId`, las respuestas de error 401 y 403 y el `SecurityConfig`.
 
 Las tres APIs usan la misma base de Supabase. La única que corre Flyway es `core-api`. En el primer despliegue, y cada vez que entra una migración nueva, `core-api` tiene que arrancar primero. `auth-api` tiene `ddl-auto=validate`, así que no arranca si le faltan tablas o columnas. `reportes-api` no tiene JPA ni `ddl-auto`: arranca igual, pero sus consultas responderían 500 hasta que el esquema exista; ningún test cubre ese caso.
 
@@ -44,12 +46,12 @@ En Render hay un Web Service por API, cada uno con su propio Dockerfile y la ra�
 - Con la base compartida, un cambio de esquema puede afectar a las tres APIs. En `reportes-api` el error no aparecería al arrancar sino en la primera consulta, porque no tiene `ddl-auto=validate`.
 - No se puede revocar un token antes de que venza. Se mitiga en parte porque las operaciones consultan el estado real de la cuenta en la base de datos y el token dura 60 minutos (`security.jwt.expiration-minutes` en `auth-api`, ADR-0010).
 - `core-api` queda acoplada a las columnas de la tabla `cliente` (solo lectura), y `reportes-api` a las de `cuenta` y `transaccion`.
-- `common` debe mantenerse pequeño para no volver a acoplar las APIs.
+- `common` debe mantenerse pequeño para no volver a acoplar las APIs. En el Sprint 3 creció, pero sigue sin conocer clases concretas de ninguna API: el filtro JWT de cada una le llega por la interfaz `FiltroAutenticacionJwt`.
+
 - Las APIs comparten el mismo `JWT_SECRET`, así que cualquier API que lo tenga podría firmar tokens, no solo `auth-api`. La firma asimétrica como alternativa quedó en el ADR-0010.
-- Hay siete clases con el mismo paquete y nombre repetidas entre las APIs:
+- Hay seis clases con el mismo paquete y nombre repetidas entre las APIs:
   - `OpenApiConfig` está en las tres y es igual en las tres.
   - `TipoDocumento` está en `auth-api` y `core-api` y es igual en las dos.
-  - `SecurityConfig` está en las tres y no es igual. El 403 de `auth-api` dice "No tienes permisos para realizar esta acción" y el de las otras dos "Acceso no autorizado". `core-api` todavía deja pasar `/api/v1/auth/login`, que no existe en esa API. Solo `reportes-api` le pone `UTF-8` a las respuestas de 401 y 403.
   - `IJwtService`, `JwtServiceImpl` y `JwtAuthenticationFilter` están en las tres y cambian según lo que hace cada API. Las de `auth-api` firman tokens y su filtro no guarda el `clienteId`. Las de `core-api` y `reportes-api` solo validan, y sus filtros hacen lo mismo.
   - `ClienteResumenResponse` está en `auth-api` y `core-api`. La de `auth-api` tiene además el método `from(Cliente)`.
 

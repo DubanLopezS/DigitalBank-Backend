@@ -6,6 +6,8 @@
 
 **Nota:** este ADR se escribió el 4 de noviembre de 2026, para cerrar el hallazgo HZ-10 de Calidad. 
 
+**Nota de actualización (6 de noviembre de 2026):** después de este ADR, el `SecurityConfig` de las tres APIs se movió a `common` (corrección por la duplicación que marcó SonarCloud). Corregimos lo que decía de que seguía repetido.
+
 ## Contexto
 
 Calidad reportó que las rutas no están versionadas y que el cuerpo de error no incluye `errorCode` ni `traceId`.
@@ -56,7 +58,7 @@ Antes de este cambio:
 - Las rutas sin versión ahora dan 404. Postman, las pruebas de Calidad y cualquier documentación externa deben actualizarse.
 - El `errorCode` pasa a ser parte del contrato. Cambiarlo rompe a quien lo use, y toda excepción nueva debe declarar uno.
 - El `traceId` solo aparece en los logs si la petición escribe alguna línea. Hoy `GlobalExceptionHandler` registra los 409 y los 500, así que un 401, 403, 404 o 400 muestra el `traceId` en la respuesta pero no deja línea de log.
-- El `SecurityConfig` sigue repetido en las tres APIs. Solo los handlers de error se compartieron.
+- El `SecurityConfig` ya no está repetido: hay uno solo en `common`, que recibe el filtro JWT de cada API a través de la interfaz `FiltroAutenticacionJwt`. Las rutas públicas propias de una API se declaran con la propiedad `seguridad.rutas-publicas` (hoy solo `auth-api`, con `/api/v1/auth/login`). Por eso `common` ya no tiene solo excepciones y errores: también tiene la configuración de seguridad, y toda API nueva que use `common` debe tener un filtro que implemente `FiltroAutenticacionJwt`, o no arranca.
 - Los tests `@WebMvcTest` que importan `SecurityConfig` deben importar también `ApiAuthenticationEntryPoint`, `ApiAccessDeniedHandler` y `ErrorResponseWriter`, o el contexto no arranca.
 - Los errores de conexión a la base (ADR-0012) ahora salen como 500 con `ERROR_INTERNO` y quedan registrados con su `traceId`. Antes no quedaban claros en el log.
 - Una ruta inexistente sin token responde 401 y no 404, porque la seguridad actúa primero.
