@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class CuentaOrigenNoDisponibleException extends ApiException {
     public CuentaOrigenNoDisponibleException() {
-        super(HttpStatus.CONFLICT, "Cuenta origen no disponible");
+        super(HttpStatus.CONFLICT, "CUENTA_ORIGEN_NO_DISPONIBLE", "Cuenta origen no disponible");
     }
 }

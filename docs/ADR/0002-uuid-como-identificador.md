@@ -10,7 +10,7 @@ Todas las entidades principales (`Cliente`, `Usuario`, `Cuenta`, `Transaccion`) 
 
 ## Alternativas que consideramos
 
-- **Entero autoincremental (1, 2, 3...)**: más simple y más rápido de indexar en Postgres porque queda ordenado secuencialmente. Lo descartamos porque es enumerable — cualquiera podría ir probando `/api/clientes/1`, `/api/clientes/2`, etc., y de paso deducir cuántos clientes tiene el banco.
+- **Entero autoincremental (1, 2, 3...)**: más simple y más rápido de indexar en Postgres porque queda ordenado secuencialmente. Lo descartamos porque es enumerable — cualquiera podría ir probando `/api/v1/clientes/1`, `/api/v1/clientes/2`, etc., y de paso deducir cuántos clientes tiene el banco.
 - **UUID**: no se puede adivinar, no necesita que nada esté coordinado para que no se repita, y es lo que se usa normalmente hoy en día en APIs REST.
 
 ## Qué decidimos

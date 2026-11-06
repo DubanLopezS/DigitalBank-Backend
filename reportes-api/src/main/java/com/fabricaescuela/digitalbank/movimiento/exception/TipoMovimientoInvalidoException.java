@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class TipoMovimientoInvalidoException extends ApiException {
     public TipoMovimientoInvalidoException() {
-        super(HttpStatus.BAD_REQUEST, "Tipo de movimiento inválido");
+        super(HttpStatus.BAD_REQUEST, "TIPO_MOVIMIENTO_INVALIDO", "Tipo de movimiento inválido");
     }
 }

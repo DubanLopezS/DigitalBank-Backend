@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class SaldoInsuficienteException extends ApiException {
     public SaldoInsuficienteException() {
-        super(HttpStatus.CONFLICT, "Saldo insuficiente");
+        super(HttpStatus.CONFLICT, "SALDO_INSUFICIENTE", "Saldo insuficiente");
     }
 }

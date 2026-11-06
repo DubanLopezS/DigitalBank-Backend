@@ -24,7 +24,7 @@ Un solo repositorio (monorepo) con un `pom.xml` padre y cuatro módulos:
 
 - `auth-api`: módulos `auth` y `cliente`. Es la única que crea tokens. Como `cliente` vive acá, el registro sigue siendo una sola transacción. El nombre no describe todo lo que contiene, pero lo aceptamos.
 - `core-api`: módulos `cuenta` y `transaccion`. También tiene un paquete `cliente` pequeño, con `ClienteConsultaAdapter` para leer clientes de la base.
-- `reportes-api`: solo consultas, de solo lectura. Tiene el módulo `movimiento` con el historial de movimientos de una cuenta (`GET /api/reportes/cuentas/{cuentaId}/movimientos`, HU-13). Lee la base con `JdbcClient`, sin JPA ni entidades (ADR-0011).
+- `reportes-api`: solo consultas, de solo lectura. Tiene el módulo `movimiento` con el historial de movimientos de una cuenta (`GET /api/v1/reportes/cuentas/{cuentaId}/movimientos`, HU-13). Lee la base con `JdbcClient`, sin JPA ni entidades (ADR-0011).
 - `common`: lo que comparten las tres (por ahora, manejo de excepciones).
 
 Las tres APIs usan la misma base de Supabase. La única que corre Flyway es `core-api`. En el primer despliegue, y cada vez que entra una migración nueva, `core-api` tiene que arrancar primero. `auth-api` tiene `ddl-auto=validate`, así que no arranca si le faltan tablas o columnas. `reportes-api` no tiene JPA ni `ddl-auto`: arranca igual, pero sus consultas responderían 500 hasta que el esquema exista; ningún test cubre ese caso.
@@ -49,7 +49,7 @@ En Render hay un Web Service por API, cada uno con su propio Dockerfile y la ra�
 - Hay siete clases con el mismo paquete y nombre repetidas entre las APIs:
   - `OpenApiConfig` está en las tres y es igual en las tres.
   - `TipoDocumento` está en `auth-api` y `core-api` y es igual en las dos.
-  - `SecurityConfig` está en las tres y no es igual. El 403 de `auth-api` dice "No tienes permisos para realizar esta acción" y el de las otras dos "Acceso no autorizado". `core-api` todavía deja pasar `/api/auth/login`, que no existe en esa API. Solo `reportes-api` le pone `UTF-8` a las respuestas de 401 y 403.
+  - `SecurityConfig` está en las tres y no es igual. El 403 de `auth-api` dice "No tienes permisos para realizar esta acción" y el de las otras dos "Acceso no autorizado". `core-api` todavía deja pasar `/api/v1/auth/login`, que no existe en esa API. Solo `reportes-api` le pone `UTF-8` a las respuestas de 401 y 403.
   - `IJwtService`, `JwtServiceImpl` y `JwtAuthenticationFilter` están en las tres y cambian según lo que hace cada API. Las de `auth-api` firman tokens y su filtro no guarda el `clienteId`. Las de `core-api` y `reportes-api` solo validan, y sus filtros hacen lo mismo.
   - `ClienteResumenResponse` está en `auth-api` y `core-api`. La de `auth-api` tiene además el método `from(Cliente)`.
 

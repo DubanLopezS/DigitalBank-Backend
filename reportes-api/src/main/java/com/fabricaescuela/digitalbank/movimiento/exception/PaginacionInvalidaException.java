@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class PaginacionInvalidaException extends ApiException {
     public PaginacionInvalidaException() {
-        super(HttpStatus.BAD_REQUEST, "Parámetros de paginación inválidos");
+        super(HttpStatus.BAD_REQUEST, "PAGINACION_INVALIDA", "Parámetros de paginación inválidos");
     }
 }

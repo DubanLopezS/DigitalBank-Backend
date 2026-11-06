@@ -27,7 +27,7 @@ jobs:
           java-version: '21'
           cache: maven
 
-      # 3. Lo mismo que haces tú a mano: tests y regla de cobertura (JaCoCo)
+      # 3. Tests y regla de cobertura (JaCoCo)
       - name: Compilar y probar
         run: ./mvnw -B clean verify 
 

@@ -24,7 +24,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/reportes/cuentas")
+@RequestMapping("/api/v1/reportes/cuentas")
 @Tag(name = "Reportes", description = "Consultas de solo lectura sobre las cuentas")
 public class MovimientoController {
 

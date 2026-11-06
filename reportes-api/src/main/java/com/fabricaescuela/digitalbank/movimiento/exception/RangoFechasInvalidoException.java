@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class RangoFechasInvalidoException extends ApiException {
     public RangoFechasInvalidoException() {
-        super(HttpStatus.BAD_REQUEST, "Rango de fechas inválido");
+        super(HttpStatus.BAD_REQUEST, "RANGO_FECHAS_INVALIDO", "Rango de fechas inválido");
     }
 }

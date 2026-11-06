@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class CuentaOrigenBloqueadaException extends ApiException {
     public CuentaOrigenBloqueadaException() {
-        super(HttpStatus.CONFLICT, "Cuenta origen bloqueada");
+        super(HttpStatus.CONFLICT, "CUENTA_ORIGEN_BLOQUEADA", "Cuenta origen bloqueada");
     }
 }

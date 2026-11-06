@@ -4,6 +4,9 @@ import com.fabricaescuela.digitalbank.core.config.SecurityConfig;
 import com.fabricaescuela.digitalbank.core.exception.GlobalExceptionHandler;
 import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import com.fabricaescuela.digitalbank.core.security.JwtAuthenticationFilter;
+import com.fabricaescuela.digitalbank.core.web.ApiAccessDeniedHandler;
+import com.fabricaescuela.digitalbank.core.web.ApiAuthenticationEntryPoint;
+import com.fabricaescuela.digitalbank.core.web.ErrorResponseWriter;
 import com.fabricaescuela.digitalbank.transaccion.dto.DepositoRequest;
 import com.fabricaescuela.digitalbank.transaccion.dto.TransaccionResponse;
 import com.fabricaescuela.digitalbank.transaccion.entity.OrigenDeposito;
@@ -34,12 +37,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(DepositoController.class)
 @ImportAutoConfiguration(SecurityFilterAutoConfiguration.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class,
+        ApiAuthenticationEntryPoint.class, ApiAccessDeniedHandler.class, ErrorResponseWriter.class})
 @DisplayName("DepositoController - autorizacion por rol")
 class DepositoControllerSecurityTest {
 
     private static final UUID CUENTA_ID = UUID.randomUUID();
-    private static final String RUTA = "/api/cuentas/" + CUENTA_ID + "/depositos";
+    private static final String RUTA = "/api/v1/cuentas/" + CUENTA_ID + "/depositos";
     private static final String TOKEN = "token-de-prueba";
     private static final BigDecimal MONTO = new BigDecimal("50000.25");
     private static final String BODY_VALIDO = "{\"monto\":50000.25,\"origen\":\"EFECTIVO\"}";

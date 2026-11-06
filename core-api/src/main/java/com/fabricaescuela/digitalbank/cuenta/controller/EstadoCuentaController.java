@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/cuentas")
+@RequestMapping("/api/v1/cuentas")
 public class EstadoCuentaController {
 
     private final IEstadoCuentaService estadoCuentaService;

@@ -4,6 +4,9 @@ import com.fabricaescuela.digitalbank.core.config.SecurityConfig;
 import com.fabricaescuela.digitalbank.core.exception.GlobalExceptionHandler;
 import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import com.fabricaescuela.digitalbank.core.security.JwtAuthenticationFilter;
+import com.fabricaescuela.digitalbank.core.web.ApiAccessDeniedHandler;
+import com.fabricaescuela.digitalbank.core.web.ApiAuthenticationEntryPoint;
+import com.fabricaescuela.digitalbank.core.web.ErrorResponseWriter;
 import com.fabricaescuela.digitalbank.cuenta.dto.CambioEstadoCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CambioEstadoCuentaResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.EstadoCuenta;
@@ -32,7 +35,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(EstadoCuentaController.class)
 @ImportAutoConfiguration(SecurityFilterAutoConfiguration.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class,
+        ApiAuthenticationEntryPoint.class, ApiAccessDeniedHandler.class, ErrorResponseWriter.class})
 @DisplayName("EstadoCuentaController - autorizacion por rol")
 class EstadoCuentaControllerSecurityTest {
 
@@ -54,7 +58,7 @@ class EstadoCuentaControllerSecurityTest {
     @DisplayName("Un CLIENTE recibe 403 al bloquear y el servicio no se invoca")
     void clienteRecibe403AlBloquear() throws Exception {
         // Arrange
-        String ruta = "/api/cuentas/" + CUENTA_ID + "/bloquear";
+        String ruta = "/api/v1/cuentas/" + CUENTA_ID + "/bloquear";
         autenticarComo(UUID.randomUUID(), "CLIENTE");
 
         // Act + Assert
@@ -73,7 +77,7 @@ class EstadoCuentaControllerSecurityTest {
     @DisplayName("Un CLIENTE recibe 403 al desbloquear y el servicio no se invoca")
     void clienteRecibe403AlDesbloquear() throws Exception {
         // Arrange
-        String ruta = "/api/cuentas/" + CUENTA_ID + "/desbloquear";
+        String ruta = "/api/v1/cuentas/" + CUENTA_ID + "/desbloquear";
         autenticarComo(UUID.randomUUID(), "CLIENTE");
 
         // Act + Assert
@@ -92,7 +96,7 @@ class EstadoCuentaControllerSecurityTest {
     @DisplayName("Un CLIENTE recibe 403 al cerrar y el servicio no se invoca")
     void clienteRecibe403AlCerrar() throws Exception {
         // Arrange
-        String ruta = "/api/cuentas/" + CUENTA_ID + "/cerrar";
+        String ruta = "/api/v1/cuentas/" + CUENTA_ID + "/cerrar";
         autenticarComo(UUID.randomUUID(), "CLIENTE");
 
         // Act + Assert
@@ -118,7 +122,7 @@ class EstadoCuentaControllerSecurityTest {
                 .thenReturn(respuesta(TipoAccionCuenta.BLOQUEO, EstadoCuenta.ACTIVA, EstadoCuenta.BLOQUEADA, adminId));
 
         // Act + Assert
-        mockMvc.perform(post("/api/cuentas/" + CUENTA_ID + "/bloquear")
+        mockMvc.perform(post("/api/v1/cuentas/" + CUENTA_ID + "/bloquear")
                         .header("Authorization", "Bearer " + TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(BODY_VALIDO))
@@ -139,7 +143,7 @@ class EstadoCuentaControllerSecurityTest {
                 .thenReturn(respuesta(TipoAccionCuenta.DESBLOQUEO, EstadoCuenta.BLOQUEADA, EstadoCuenta.ACTIVA, adminId));
 
         // Act + Assert
-        mockMvc.perform(post("/api/cuentas/" + CUENTA_ID + "/desbloquear")
+        mockMvc.perform(post("/api/v1/cuentas/" + CUENTA_ID + "/desbloquear")
                         .header("Authorization", "Bearer " + TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(BODY_VALIDO))
@@ -160,7 +164,7 @@ class EstadoCuentaControllerSecurityTest {
                 .thenReturn(respuesta(TipoAccionCuenta.CIERRE, EstadoCuenta.ACTIVA, EstadoCuenta.CERRADA, adminId));
 
         // Act + Assert
-        mockMvc.perform(post("/api/cuentas/" + CUENTA_ID + "/cerrar")
+        mockMvc.perform(post("/api/v1/cuentas/" + CUENTA_ID + "/cerrar")
                         .header("Authorization", "Bearer " + TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(BODY_VALIDO))

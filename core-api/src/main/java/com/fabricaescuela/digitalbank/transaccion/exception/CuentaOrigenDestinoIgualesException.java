@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class CuentaOrigenDestinoIgualesException extends ApiException {
     public CuentaOrigenDestinoIgualesException() {
-        super(HttpStatus.BAD_REQUEST, "Cuenta origen y destino no pueden ser iguales");
+        super(HttpStatus.BAD_REQUEST, "CUENTA_ORIGEN_DESTINO_IGUALES", "Cuenta origen y destino no pueden ser iguales");
     }
 }

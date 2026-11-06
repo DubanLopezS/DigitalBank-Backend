@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/cuentas")
+@RequestMapping("/api/v1/cuentas")
 public class CuentaController {
 
     private final ICuentaService cuentaService;
