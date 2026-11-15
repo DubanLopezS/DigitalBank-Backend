@@ -14,4 +14,6 @@ public interface IUsuarioRepository {
     boolean existsByEmail(String email);
 
     Optional<Usuario> findByEmail(String email);
+
+    Optional<Usuario> findByClienteId(UUID clienteId);
 }

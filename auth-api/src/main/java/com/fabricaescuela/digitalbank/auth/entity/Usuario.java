@@ -86,6 +86,10 @@ public class Usuario {
         this.ultimoLogin = LocalDateTime.now();
     }
 
+    public void cambiarEmail(String nuevoEmail) {
+        this.email = nuevoEmail;
+    }
+
     public UUID getId() { return id; }
     public UUID getClienteId() { return clienteId; }
     public String getEmail() { return email; }

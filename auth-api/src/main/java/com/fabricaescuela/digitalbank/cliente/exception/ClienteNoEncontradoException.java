@@ -1,0 +1,10 @@
+package com.fabricaescuela.digitalbank.cliente.exception;
+
+import com.fabricaescuela.digitalbank.core.exception.ApiException;
+import org.springframework.http.HttpStatus;
+
+public class ClienteNoEncontradoException extends ApiException {
+    public ClienteNoEncontradoException(String message) {
+        super(HttpStatus.NOT_FOUND, "CLIENTE_NO_ENCONTRADO", message);
+    }
+}
