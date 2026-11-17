@@ -4,10 +4,13 @@ import com.fabricaescuela.digitalbank.cliente.entity.Cliente;
 import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public interface IClienteRepository {
 
     Cliente save(Cliente cliente);
+
+    Optional<Cliente> findById(UUID id);
 
     boolean existsByTipoDocumentoAndNumeroDocumento(TipoDocumento tipoDocumento, String numeroDocumento);
 

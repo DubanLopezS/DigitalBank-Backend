@@ -101,6 +101,12 @@ La prioridad y la razón de cada endpoint están en [docs/apis-priorizadas.md](d
 | `POST /api/v1/cuentas/{cuentaId}/transferencias` | HU-09a Transferencia exitosa · HU-09b Validación de montos y fondos · HU-09c Validación de cuenta destino | Transfiere dinero entre dos cuentas, generando dos movimientos ligados | CLIENTE (titular de la cuenta origen; validado en el servicio) | `201` creado · `400` monto inválido, o cuenta origen igual a la destino · `401` sin token o token inválido · `403` cuenta origen no es del cliente autenticado · `404` cuenta destino no encontrada · `409` saldo insuficiente, cuenta origen bloqueada o cerrada, o cuenta destino cerrada |
 | `GET /api/v1/reportes/cuentas/{cuentaId}/movimientos` | HU-13 Historial de transacciones por cuenta | Lista los movimientos de una cuenta, con filtros de fecha/tipo y paginación | CLIENTE (solo las suyas), ADMIN, CAJERO (cualquiera) | `200` ok (puede venir vacío) · `400` rango de fechas, tipo o paginación inválidos · `401` sin token o token inválido · `403` cuenta ajena (CLIENTE) · `404` cuenta no encontrada (solo ADMIN/CAJERO) |
 
+### Sprint 3
+
+| Método y ruta | HU | Qué hace | Rol | Códigos de respuesta |
+|---|---|---|---|---|
+| `PATCH /api/v1/clientes/{clienteId}` | HU-03 Actualización de datos del cliente | Actualiza el correo o el teléfono de un cliente, con auditoría de cada cambio; el correo nuevo también pasa a ser el de su login | ADMIN | `200` actualizado · `400` correo o teléfono inválido, o sin datos · `401` sin token o token inválido · `403` no es ADMIN · `404` cliente no encontrado · `409` el correo ya está registrado |
+
 ## Swagger y despliegue
 
 Las tres APIs usan springdoc y dejan la documentación sin token. En local, la interfaz está en `/swagger-ui.html` y el JSON de OpenAPI en `/v3/api-docs`. Desplegadas en Render:

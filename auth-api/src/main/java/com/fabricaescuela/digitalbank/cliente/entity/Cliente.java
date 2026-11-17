@@ -1,12 +1,14 @@
 package com.fabricaescuela.digitalbank.cliente.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.DynamicUpdate;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "cliente")
+@DynamicUpdate
 public class Cliente {
 
     @Id
@@ -52,6 +54,14 @@ public class Cliente {
         this.fechaNacimiento = fechaNacimiento;
         this.telefono = telefono;
         this.email = email;
+    }
+
+    public void cambiarEmail(String nuevoEmail) {
+        this.email = nuevoEmail;
+    }
+
+    public void cambiarTelefono(String nuevoTelefono) {
+        this.telefono = nuevoTelefono;
     }
 
     public UUID getId() { return id; }
