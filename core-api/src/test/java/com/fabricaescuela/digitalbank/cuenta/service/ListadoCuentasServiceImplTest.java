@@ -31,6 +31,9 @@ import static org.mockito.Mockito.when;
 class ListadoCuentasServiceImplTest {
 
     private static final UUID CLIENTE_ID = UUID.randomUUID();
+    private static final String CLIENTE = "CLIENTE";
+    private static final String ADMIN = "ADMIN";
+    private static final String CAJERO = "CAJERO";
 
     @Mock
     private ICuentaRepository cuentaRepository;
@@ -49,7 +52,7 @@ class ListadoCuentasServiceImplTest {
         when(cuentaRepository.findByClienteIdOrderByFechaAperturaAsc(CLIENTE_ID)).thenReturn(List.of(cuenta));
 
         // Act
-        List<CuentaResumenResponse> resultado = service.listar(CLIENTE_ID, null, CLIENTE_ID);
+        List<CuentaResumenResponse> resultado = service.listar(CLIENTE_ID, null, CLIENTE_ID, CLIENTE);
 
         // Assert
         assertThat(resultado).hasSize(1);
@@ -66,33 +69,53 @@ class ListadoCuentasServiceImplTest {
         UUID otroCliente = UUID.randomUUID();
 
         // Act + Assert
-        assertThatThrownBy(() -> service.listar(otroCliente, null, CLIENTE_ID))
+        assertThatThrownBy(() -> service.listar(otroCliente, null, CLIENTE_ID, CLIENTE))
                 .isInstanceOf(AccesoNoAutorizadoException.class);
         verifyNoInteractions(cuentaRepository, clienteConsulta);
     }
 
     @Test
-    @DisplayName("ADMIN o CAJERO reciben 404 si el cliente no existe")
-    void personalInternoRecibe404SiNoExiste() {
+    @DisplayName("Un CLIENTE con filtro invalido y otro id recibe 403 antes que 400")
+    void clienteConOtroIdRecibe403AunConFiltroInvalido() {
+        // Act + Assert
+        assertThatThrownBy(() -> service.listar(UUID.randomUUID(), "xyz", CLIENTE_ID, CLIENTE))
+                .isInstanceOf(AccesoNoAutorizadoException.class);
+    }
+
+    @Test
+    @DisplayName("ADMIN recibe 404 si el cliente no existe")
+    void adminRecibe404SiNoExiste() {
         // Arrange
         when(clienteConsulta.existePorId(CLIENTE_ID)).thenReturn(false);
 
         // Act + Assert
-        assertThatThrownBy(() -> service.listar(CLIENTE_ID, null, null))
+        assertThatThrownBy(() -> service.listar(CLIENTE_ID, null, null, ADMIN))
                 .isInstanceOf(ClienteNoEncontradoException.class);
         verifyNoInteractions(cuentaRepository);
     }
 
     @Test
-    @DisplayName("ADMIN o CAJERO listan las cuentas de un cliente existente")
-    void personalInternoListaCuentas() {
+    @DisplayName("CAJERO recibe 404 si el cliente no existe")
+    void cajeroRecibe404SiNoExiste() {
+        // Arrange
+        when(clienteConsulta.existePorId(CLIENTE_ID)).thenReturn(false);
+
+        // Act + Assert
+        assertThatThrownBy(() -> service.listar(CLIENTE_ID, null, null, CAJERO))
+                .isInstanceOf(ClienteNoEncontradoException.class);
+        verifyNoInteractions(cuentaRepository);
+    }
+
+    @Test
+    @DisplayName("ADMIN lista las cuentas de un cliente existente")
+    void adminListaCuentas() {
         // Arrange
         Cuenta cuenta = new Cuenta(CLIENTE_ID, "1234567890", TipoCuenta.CORRIENTE);
         when(clienteConsulta.existePorId(CLIENTE_ID)).thenReturn(true);
         when(cuentaRepository.findByClienteIdOrderByFechaAperturaAsc(CLIENTE_ID)).thenReturn(List.of(cuenta));
 
         // Act
-        List<CuentaResumenResponse> resultado = service.listar(CLIENTE_ID, null, null);
+        List<CuentaResumenResponse> resultado = service.listar(CLIENTE_ID, null, null, ADMIN);
 
         // Assert
         assertThat(resultado).hasSize(1);
@@ -105,7 +128,7 @@ class ListadoCuentasServiceImplTest {
         when(cuentaRepository.findByClienteIdOrderByFechaAperturaAsc(CLIENTE_ID)).thenReturn(List.of());
 
         // Act
-        List<CuentaResumenResponse> resultado = service.listar(CLIENTE_ID, null, CLIENTE_ID);
+        List<CuentaResumenResponse> resultado = service.listar(CLIENTE_ID, null, CLIENTE_ID, CLIENTE);
 
         // Assert
         assertThat(resultado).isEmpty();
@@ -119,7 +142,7 @@ class ListadoCuentasServiceImplTest {
                 .thenReturn(List.of());
 
         // Act
-        service.listar(CLIENTE_ID, "bloqueada", CLIENTE_ID);
+        service.listar(CLIENTE_ID, "bloqueada", CLIENTE_ID, CLIENTE);
 
         // Assert
         verify(cuentaRepository)
@@ -130,7 +153,7 @@ class ListadoCuentasServiceImplTest {
     @DisplayName("Un filtro desconocido responde FILTRO_INVALIDO")
     void filtroDesconocidoEsInvalido() {
         // Act + Assert
-        assertThatThrownBy(() -> service.listar(CLIENTE_ID, "CONGELADA", CLIENTE_ID))
+        assertThatThrownBy(() -> service.listar(CLIENTE_ID, "CONGELADA", CLIENTE_ID, CLIENTE))
                 .isInstanceOf(FiltroInvalidoException.class);
         verifyNoInteractions(cuentaRepository);
     }
@@ -139,7 +162,7 @@ class ListadoCuentasServiceImplTest {
     @DisplayName("Un filtro vacio responde FILTRO_INVALIDO")
     void filtroVacioEsInvalido() {
         // Act + Assert
-        assertThatThrownBy(() -> service.listar(CLIENTE_ID, "", CLIENTE_ID))
+        assertThatThrownBy(() -> service.listar(CLIENTE_ID, "", CLIENTE_ID, CLIENTE))
                 .isInstanceOf(FiltroInvalidoException.class);
     }
 }

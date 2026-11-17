@@ -5,6 +5,7 @@ import com.fabricaescuela.digitalbank.cuenta.interfaces.services.IListadoCuentas
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,6 +31,15 @@ public class ClienteCuentasController {
                                                             @RequestParam(required = false) String estado,
                                                             Authentication authentication) {
         UUID clienteIdAutenticado = (UUID) authentication.getDetails();
-        return ResponseEntity.ok(listadoCuentasService.listar(clienteId, estado, clienteIdAutenticado));
+        String rol = obtenerRol(authentication);
+        return ResponseEntity.ok(listadoCuentasService.listar(clienteId, estado, clienteIdAutenticado, rol));
+    }
+
+    private String obtenerRol(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .findFirst()
+                .map(authority -> authority.replace("ROLE_", ""))
+                .orElseThrow();
     }
 }

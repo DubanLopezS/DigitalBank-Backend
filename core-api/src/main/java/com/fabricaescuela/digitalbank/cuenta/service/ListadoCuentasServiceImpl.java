@@ -22,6 +22,7 @@ import java.util.UUID;
 public class ListadoCuentasServiceImpl implements IListadoCuentasService {
 
     private static final Logger log = LoggerFactory.getLogger(ListadoCuentasServiceImpl.class);
+    private static final String ROL_CLIENTE = "CLIENTE";
 
     private final ICuentaRepository cuentaRepository;
     private final IClienteConsulta clienteConsulta;
@@ -33,11 +34,12 @@ public class ListadoCuentasServiceImpl implements IListadoCuentasService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CuentaResumenResponse> listar(UUID clienteId, String estado, UUID clienteIdAutenticado) {
-        boolean esCliente = clienteIdAutenticado != null;
+    public List<CuentaResumenResponse> listar(UUID clienteId, String estado,
+                                            UUID clienteIdAutenticado, String rol) {
+        boolean esCliente = ROL_CLIENTE.equals(rol);
 
-        // ADR-0005
-        if (esCliente && !clienteIdAutenticado.equals(clienteId)) {
+        // ADR-0005: un CLIENTE con otro id recibe 403, exista o no ese cliente
+        if (esCliente && !clienteId.equals(clienteIdAutenticado)) {
             throw new AccesoNoAutorizadoException();
         }
 

@@ -37,13 +37,12 @@ class ClienteCuentasControllerTest {
     private ClienteCuentasController controller;
 
     @Test
-    @DisplayName("Un CLIENTE recibe 200 y su clienteId se toma del token")
+    @DisplayName("Un CLIENTE recibe 200 y su clienteId y rol se toman del token")
     void clienteRecibe200() {
         // Arrange
-
         List<CuentaResumenResponse> esperada = List.of(new CuentaResumenResponse(
-        "1234567890", TipoCuenta.AHORROS, new BigDecimal("50.00"), EstadoCuenta.ACTIVA));
-        when(listadoCuentasService.listar(CLIENTE_ID, "ACTIVA", CLIENTE_ID)).thenReturn(esperada);
+                "1234567890", TipoCuenta.AHORROS, new BigDecimal("50.00"), EstadoCuenta.ACTIVA));
+        when(listadoCuentasService.listar(CLIENTE_ID, "ACTIVA", CLIENTE_ID, "CLIENTE")).thenReturn(esperada);
 
         // Act
         ResponseEntity<List<CuentaResumenResponse>> resultado =
@@ -55,10 +54,10 @@ class ClienteCuentasControllerTest {
     }
 
     @Test
-    @DisplayName("Un ADMIN no tiene clienteId en el token y el service recibe null")
-    void adminPasaClienteIdNulo() {
+    @DisplayName("Un ADMIN pasa clienteId nulo y rol ADMIN al servicio")
+    void adminPasaRolAdmin() {
         // Arrange
-        when(listadoCuentasService.listar(CLIENTE_ID, null, null)).thenReturn(List.of());
+        when(listadoCuentasService.listar(CLIENTE_ID, null, null, "ADMIN")).thenReturn(List.of());
 
         // Act
         ResponseEntity<List<CuentaResumenResponse>> resultado =
@@ -67,7 +66,20 @@ class ClienteCuentasControllerTest {
         // Assert
         assertThat(resultado.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(resultado.getBody()).isEmpty();
-        verify(listadoCuentasService).listar(CLIENTE_ID, null, null);
+        verify(listadoCuentasService).listar(CLIENTE_ID, null, null, "ADMIN");
+    }
+
+    @Test
+    @DisplayName("Un CAJERO pasa rol CAJERO al servicio")
+    void cajeroPasaRolCajero() {
+        // Arrange
+        when(listadoCuentasService.listar(CLIENTE_ID, null, null, "CAJERO")).thenReturn(List.of());
+
+        // Act
+        controller.listar(CLIENTE_ID, null, autenticacion("ROLE_CAJERO", null));
+
+        // Assert
+        verify(listadoCuentasService).listar(CLIENTE_ID, null, null, "CAJERO");
     }
 
     private Authentication autenticacion(String rol, UUID clienteId) {

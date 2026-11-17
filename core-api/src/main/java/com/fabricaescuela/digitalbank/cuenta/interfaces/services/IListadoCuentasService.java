@@ -7,8 +7,5 @@ import java.util.UUID;
 
 public interface IListadoCuentasService {
 
-    /**
-     * @param clienteIdAutenticado clienteId del token; null si quien consulta es ADMIN o CAJERO
-     */
-    List<CuentaResumenResponse> listar(UUID clienteId, String estado, UUID clienteIdAutenticado);
+    List<CuentaResumenResponse> listar(UUID clienteId, String estado, UUID clienteIdAutenticado, String rol);
 }
