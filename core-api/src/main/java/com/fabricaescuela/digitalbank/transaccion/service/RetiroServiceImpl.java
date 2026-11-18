@@ -30,7 +30,8 @@ public class RetiroServiceImpl implements IRetiroService {
 
     @Override
     @Transactional
-    public TransaccionResponse registrarRetiro(UUID cuentaId, RetiroRequest request, UUID clienteId) {
+    public TransaccionResponse registrarRetiro(UUID cuentaId, RetiroRequest request, UUID clienteId,
+                                               UUID usuarioId) {
         cuentaService.validarTitularidad(cuentaId, clienteId);
 
         MovimientoSaldoResponse movimiento = cuentaService.debitar(cuentaId, request.monto());
@@ -39,7 +40,8 @@ public class RetiroServiceImpl implements IRetiroService {
                 movimiento.cuentaId(),
                 request.monto(),
                 movimiento.saldoAnterior(),
-                movimiento.saldoNuevo()
+                movimiento.saldoNuevo(),
+                usuarioId
         );
         Transaccion transaccionGuardada = transaccionRepository.save(transaccion);
 

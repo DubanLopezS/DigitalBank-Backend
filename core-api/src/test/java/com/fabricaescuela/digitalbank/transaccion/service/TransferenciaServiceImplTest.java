@@ -33,6 +33,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -49,6 +50,7 @@ class TransferenciaServiceImplTest {
     private static final UUID CUENTA_ID = UUID.randomUUID();
     private static final UUID DESTINO_ID = UUID.randomUUID();
     private static final UUID CLIENTE_ID = UUID.randomUUID();
+    private static final UUID USUARIO_ID = UUID.randomUUID();
     private static final String CUENTA_DESTINO = "1234567890";
     private static final BigDecimal MONTO = new BigDecimal("30000.00");
 
@@ -71,7 +73,7 @@ class TransferenciaServiceImplTest {
         prepararTransferencia();
 
         // Act
-        transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID);
+        transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID, USUARIO_ID);
 
         // Assert
         InOrder orden = inOrder(cuentaService);
@@ -90,7 +92,7 @@ class TransferenciaServiceImplTest {
         prepararTransferencia();
 
         // Act
-        transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID);
+        transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID, USUARIO_ID);
 
         // Assert
         verify(transaccionRepository, times(2)).save(transaccionCaptor.capture());
@@ -117,13 +119,31 @@ class TransferenciaServiceImplTest {
     }
 
     @Test
+    @DisplayName("Las dos filas de la transferencia, salida y entrada, guardan el usuario que la hizo")
+    void lasDosFilasGuardanElUsuario() {
+        // Arrange
+        prepararTransferencia();
+
+        // Act
+        transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID, USUARIO_ID);
+
+        // Assert
+        verify(transaccionRepository, times(2)).save(transaccionCaptor.capture());
+        assertThat(transaccionCaptor.getAllValues())
+                .extracting(Transaccion::getSentido, Transaccion::getUsuarioId)
+                .containsExactly(
+                        tuple(SentidoTransferencia.SALIENTE, USUARIO_ID),
+                        tuple(SentidoTransferencia.ENTRANTE, USUARIO_ID));
+    }
+
+    @Test
     @DisplayName("La respuesta es el comprobante de la transaccion de salida")
     void laRespuestaEsElComprobanteDeLaSalida() {
         // Arrange
         prepararTransferencia();
 
         // Act
-        TransferenciaResponse response = transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID);
+        TransferenciaResponse response = transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID, USUARIO_ID);
 
         // Assert
         verify(transaccionRepository, times(2)).save(transaccionCaptor.capture());
@@ -145,7 +165,7 @@ class TransferenciaServiceImplTest {
         doThrow(excepcion).when(cuentaService).validarTitularidad(CUENTA_ID, CLIENTE_ID);
 
         // Act & Assert
-        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID))
+        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID, USUARIO_ID))
                 .isSameAs(excepcion);
 
         verify(cuentaService, never()).buscarIdPorNumero(any());
@@ -160,7 +180,7 @@ class TransferenciaServiceImplTest {
         when(cuentaService.buscarIdPorNumero(CUENTA_DESTINO)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID))
+        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID, USUARIO_ID))
                 .isInstanceOfSatisfying(CuentaDestinoNoEncontradaException.class, ex -> {
                     assertThat(ex.getMessage()).isEqualTo("Cuenta destino no encontrada");
                     assertThat(ex.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
@@ -180,7 +200,7 @@ class TransferenciaServiceImplTest {
         when(cuentaService.estaCerrada(DESTINO_ID)).thenReturn(true);
 
         // Act & Assert
-        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID))
+        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID, USUARIO_ID))
                 .isInstanceOfSatisfying(CuentaDestinoNoDisponibleException.class, ex -> {
                     assertThat(ex.getMessage()).isEqualTo("Cuenta destino no disponible");
                     assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
@@ -200,7 +220,7 @@ class TransferenciaServiceImplTest {
         when(cuentaService.estaBloqueada(CUENTA_ID)).thenReturn(true);
 
         // Act & Assert
-        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID))
+        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID, USUARIO_ID))
                 .isInstanceOfSatisfying(CuentaOrigenBloqueadaException.class, ex -> {
                     assertThat(ex.getMessage()).isEqualTo("Cuenta origen bloqueada");
                     assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
@@ -222,7 +242,7 @@ class TransferenciaServiceImplTest {
         when(cuentaService.estaCerrada(CUENTA_ID)).thenReturn(true);
 
         // Act & Assert
-        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID))
+        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID, USUARIO_ID))
                 .isInstanceOfSatisfying(CuentaOrigenNoDisponibleException.class, ex -> {
                     assertThat(ex.getMessage()).isEqualTo("Cuenta origen no disponible");
                     assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
@@ -243,7 +263,7 @@ class TransferenciaServiceImplTest {
         when(cuentaService.buscarIdPorNumero(CUENTA_DESTINO)).thenReturn(Optional.of(CUENTA_ID));
 
         // Act & Assert
-        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID))
+        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID, USUARIO_ID))
                 .isInstanceOfSatisfying(CuentaOrigenDestinoIgualesException.class, ex -> {
                     assertThat(ex.getMessage()).isEqualTo("Cuenta origen y destino no pueden ser iguales");
                     assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -266,7 +286,7 @@ class TransferenciaServiceImplTest {
         when(cuentaService.debitar(CUENTA_ID, MONTO)).thenThrow(excepcion);
 
         // Act & Assert
-        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID))
+        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID, USUARIO_ID))
                 .isSameAs(excepcion);
 
         verify(cuentaService, never()).acreditar(any(UUID.class), any(BigDecimal.class));
@@ -284,7 +304,7 @@ class TransferenciaServiceImplTest {
         when(cuentaService.acreditar(DESTINO_ID, MONTO)).thenThrow(excepcion);
 
         // Act & Assert
-        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID))
+        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID, USUARIO_ID))
                 .isSameAs(excepcion);
 
         verifyNoInteractions(transaccionRepository);

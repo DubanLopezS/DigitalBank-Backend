@@ -1,4 +1,4 @@
--- Copia de las tablas cuenta y transaccion de las migraciones V1 a V3 de core-api.
+-- Copia de las tablas cuenta y transaccion de las migraciones V1 a V6 de core-api.
 -- Se omite la FK a cliente porque las consultas de reportes no la usan.
 DROP TABLE IF EXISTS transaccion;
 DROP TABLE IF EXISTS cuenta;
@@ -28,9 +28,15 @@ CREATE TABLE transaccion (
     transferencia_id  UUID,
     sentido           VARCHAR(10),
     descripcion       VARCHAR(255),
-    CONSTRAINT ck_transaccion_tipo CHECK (tipo IN ('DEPOSITO','RETIRO','TRANSFERENCIA')),
+    usuario_id        UUID,
+    motivo            VARCHAR(255),
+    transaccion_relacionada_id UUID REFERENCES transaccion(id),
+    CONSTRAINT uk_transaccion_relacionada UNIQUE (transaccion_relacionada_id),
+    CONSTRAINT ck_transaccion_tipo CHECK (tipo IN ('DEPOSITO','RETIRO','TRANSFERENCIA','REVERSO')),
     CONSTRAINT ck_transaccion_origen CHECK (origen IN ('EFECTIVO','CHEQUE','OTRO')),
-    CONSTRAINT ck_transaccion_estado CHECK (estado IN ('COMPLETADA')),
+    CONSTRAINT ck_transaccion_estado CHECK (estado IN ('COMPLETADA','REVERSADA')),
     CONSTRAINT ck_transaccion_sentido CHECK (sentido IN ('SALIENTE','ENTRANTE')),
-    CONSTRAINT ck_transaccion_transferencia CHECK ((tipo = 'TRANSFERENCIA' AND transferencia_id IS NOT NULL AND sentido IS NOT NULL) OR (tipo <> 'TRANSFERENCIA' AND transferencia_id IS NULL AND sentido IS NULL))
+    CONSTRAINT ck_transaccion_transferencia CHECK ((tipo = 'TRANSFERENCIA' AND transferencia_id IS NOT NULL AND sentido IS NOT NULL) OR (tipo = 'REVERSO' AND sentido IS NOT NULL) OR (tipo IN ('DEPOSITO','RETIRO') AND transferencia_id IS NULL AND sentido IS NULL)),
+    CONSTRAINT ck_transaccion_reverso CHECK ((tipo = 'REVERSO' AND transaccion_relacionada_id IS NOT NULL AND usuario_id IS NOT NULL AND motivo IS NOT NULL AND char_length(btrim(motivo)) >= 10) OR (tipo <> 'REVERSO' AND motivo IS NULL)),
+    CONSTRAINT ck_transaccion_reversada CHECK (estado = 'COMPLETADA' OR (estado = 'REVERSADA' AND tipo <> 'REVERSO' AND transaccion_relacionada_id IS NOT NULL))
 );

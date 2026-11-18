@@ -35,18 +35,21 @@ class TransferenciaControllerTest {
     private TransferenciaController transferenciaController;
 
     @Test
-    @DisplayName("La transferencia responde 201 con el comprobante")
+    @DisplayName("La transferencia responde 201 con el comprobante y pasa el cliente y el usuario del token")
     void laTransferenciaResponde201() {
         // Arrange
         UUID cuentaId = UUID.randomUUID();
         UUID clienteId = UUID.randomUUID();
+        UUID usuarioId = UUID.randomUUID();
         TransferenciaRequest request = new TransferenciaRequest(
                 "1234567890", new BigDecimal("30000.00"), "Pago arriendo");
         TransferenciaResponse esperada = new TransferenciaResponse(
                 UUID.randomUUID(), UUID.randomUUID(), cuentaId, "1234567890", new BigDecimal("30000.00"),
                 "Pago arriendo", "COMPLETADA", LocalDateTime.now());
         when(authentication.getDetails()).thenReturn(clienteId);
-        when(transferenciaService.registrarTransferencia(cuentaId, request, clienteId)).thenReturn(esperada);
+        when(authentication.getPrincipal()).thenReturn(usuarioId);
+        when(transferenciaService.registrarTransferencia(cuentaId, request, clienteId, usuarioId))
+                .thenReturn(esperada);
 
         // Act
         ResponseEntity<TransferenciaResponse> respuesta =
