@@ -41,12 +41,14 @@ class RetiroControllerTest {
         // Arrange
         UUID cuentaId = UUID.randomUUID();
         UUID clienteId = UUID.randomUUID();
+        UUID usuarioId = UUID.randomUUID();
         RetiroRequest request = new RetiroRequest(new BigDecimal("30000.00"));
         TransaccionResponse esperada = new TransaccionResponse(
                 UUID.randomUUID(), cuentaId, "RETIRO", new BigDecimal("30000.00"),
                 new BigDecimal("100000.00"), new BigDecimal("70000.00"), null, "COMPLETADA", LocalDateTime.now());
         when(authentication.getDetails()).thenReturn(clienteId);
-        when(retiroService.registrarRetiro(cuentaId, request, clienteId)).thenReturn(esperada);
+        when(authentication.getPrincipal()).thenReturn(usuarioId);
+        when(retiroService.registrarRetiro(cuentaId, request, clienteId, usuarioId)).thenReturn(esperada);
 
         // Act
         ResponseEntity<TransaccionResponse> respuesta = retiroController.retirar(cuentaId, request, authentication);
@@ -61,13 +63,15 @@ class RetiroControllerTest {
     void elClienteSeTomaDeLaAutenticacionSinRevisarlo() {
         // Arrange
         UUID cuentaId = UUID.randomUUID();
+        UUID usuarioId = UUID.randomUUID();
         RetiroRequest request = new RetiroRequest(new BigDecimal("30000.00"));
         when(authentication.getDetails()).thenReturn(null);
+        when(authentication.getPrincipal()).thenReturn(usuarioId);
 
         // Act
         retiroController.retirar(cuentaId, request, authentication);
 
         // Assert
-        verify(retiroService).registrarRetiro(cuentaId, request, null);
+        verify(retiroService).registrarRetiro(cuentaId, request, null, usuarioId);
     }
 }

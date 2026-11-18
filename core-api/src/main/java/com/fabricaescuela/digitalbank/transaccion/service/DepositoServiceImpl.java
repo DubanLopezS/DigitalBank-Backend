@@ -30,7 +30,7 @@ public class DepositoServiceImpl implements IDepositoService {
 
     @Override
     @Transactional
-    public TransaccionResponse registrarDeposito(UUID cuentaId, DepositoRequest request) {
+    public TransaccionResponse registrarDeposito(UUID cuentaId, DepositoRequest request, UUID usuarioId) {
         MovimientoSaldoResponse movimiento = cuentaService.acreditar(cuentaId, request.monto());
 
         Transaccion transaccion = Transaccion.deposito(
@@ -38,7 +38,8 @@ public class DepositoServiceImpl implements IDepositoService {
                 request.monto(),
                 movimiento.saldoAnterior(),
                 movimiento.saldoNuevo(),
-                request.origen()
+                request.origen(),
+                usuarioId
         );
         Transaccion transaccionGuardada = transaccionRepository.save(transaccion);
 

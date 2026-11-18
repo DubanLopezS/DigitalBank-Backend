@@ -27,7 +27,8 @@ public class RetiroController {
                                                        @Valid @RequestBody RetiroRequest request,
                                                        Authentication authentication) {
         UUID clienteId = (UUID) authentication.getDetails();
-        TransaccionResponse response = retiroService.registrarRetiro(cuentaId, request, clienteId);
+        UUID usuarioId = (UUID) authentication.getPrincipal();
+        TransaccionResponse response = retiroService.registrarRetiro(cuentaId, request, clienteId, usuarioId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
