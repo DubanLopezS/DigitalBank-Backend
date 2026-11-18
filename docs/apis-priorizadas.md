@@ -23,6 +23,7 @@ Endpoints sacados de los controllers de `main`. El rol sale de `@PreAuthorize` c
 | `POST /api/v1/cuentas/{cuentaId}/bloquear` | HU-07a Bloqueo de cuenta | 2 | ADMIN (`@PreAuthorize`) | media | No mueve dinero, pero una cuenta bloqueada no puede retirar ni transferir. |
 | `POST /api/v1/cuentas/{cuentaId}/desbloquear` | HU-07a Bloqueo de cuenta | 2 | ADMIN (`@PreAuthorize`) | media | Es la única forma de devolver a ACTIVA una cuenta bloqueada. |
 | `POST /api/v1/cuentas/{cuentaId}/cerrar` | HU-07b Cierre de cuenta | 2 | ADMIN (`@PreAuthorize`) | media | No mueve dinero (exige saldo $0) y no tiene vuelta atrás desde la API. |
+| `GET /api/v1/clientes/{clienteId}/cuentas` | HU-08 Listado de cuentas por cliente | 3 | CLIENTE (solo las suyas), ADMIN y CAJERO (cualquiera) con `@PreAuthorize`; lo decide `ListadoCuentasServiceImpl` (ADR-0005) | baja | Es de solo lectura y, si falla, no afecta saldos ni bloquea otra HU. |
 
 ## reportes-api
 

@@ -107,7 +107,9 @@ La prioridad y la razón de cada endpoint están en [docs/apis-priorizadas.md](d
 |---|---|---|---|---|
 | `GET /api/v1/clientes?tipoDocumento=&numeroDocumento=` | HU-02 Consulta de información del cliente | Consulta los datos de un cliente por tipo y número de documento, con la lista resumida de sus cuentas (sin saldos) | CLIENTE (solo su propio documento), ADMIN, CAJERO (cualquiera) | `200` ok · `400` falta el tipo o el número de documento, o no es válido · `401` sin token o token inválido · `403` documento ajeno o inexistente (CLIENTE) · `404` cliente no encontrado (solo ADMIN/CAJERO) |
 | `PATCH /api/v1/clientes/{clienteId}` | HU-03 Actualización de datos del cliente | Actualiza el correo o el teléfono de un cliente, con auditoría de cada cambio; el correo nuevo también pasa a ser el de su login | ADMIN | `200` actualizado · `400` correo o teléfono inválido, o sin datos · `401` sin token o token inválido · `403` no es ADMIN · `404` cliente no encontrado · `409` el correo ya está registrado |
+| `GET /api/v1/clientes/{clienteId}/cuentas?estado=` | HU-08 Listado de cuentas por cliente | Lista las cuentas de un cliente (número, tipo, saldo disponible y estado), con filtro opcional por estado | CLIENTE (solo las suyas), ADMIN, CAJERO (cualquiera) | `200` ok (puede venir vacío) · `400` estado inválido · `401` sin token o token inválido · `403` cliente ajeno (CLIENTE) · `404` cliente no encontrado (solo ADMIN/CAJERO) |
 | `GET /api/v1/reportes/transacciones/{transaccionId}` | HU-14 Detalle de una transacción | Muestra una transacción con sus cuentas origen y destino; el usuario que la originó solo aparece si consulta un ADMIN | CLIENTE, ADMIN | `200` ok · `400` id inválido · `401` sin token o token inválido · `403` cliente sin acceso, o CAJERO · `404` transacción no encontrada (solo ADMIN) |
+
 
 ## Swagger y despliegue
 

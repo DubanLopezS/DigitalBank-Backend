@@ -6,11 +6,13 @@ import com.fabricaescuela.digitalbank.core.security.JwtAuthenticationFilter;
 import com.fabricaescuela.digitalbank.core.web.ApiAccessDeniedHandler;
 import com.fabricaescuela.digitalbank.core.web.ApiAuthenticationEntryPoint;
 import com.fabricaescuela.digitalbank.core.web.ErrorResponseWriter;
+import com.fabricaescuela.digitalbank.cuenta.controller.ClienteCuentasController;
 import com.fabricaescuela.digitalbank.cuenta.controller.CuentaController;
 import com.fabricaescuela.digitalbank.cuenta.controller.EstadoCuentaController;
 import com.fabricaescuela.digitalbank.cuenta.controller.SaldoController;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ICuentaService;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.services.IEstadoCuentaService;
+import com.fabricaescuela.digitalbank.cuenta.interfaces.services.IListadoCuentasService;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ISaldoService;
 import com.fabricaescuela.digitalbank.transaccion.controller.RetiroController;
 import com.fabricaescuela.digitalbank.transaccion.controller.TransferenciaController;
@@ -39,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({CuentaController.class, SaldoController.class, RetiroController.class,
-        TransferenciaController.class, EstadoCuentaController.class})
+        TransferenciaController.class, EstadoCuentaController.class, ClienteCuentasController.class})
 @ImportAutoConfiguration(SecurityFilterAutoConfiguration.class)
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class,
         ApiAuthenticationEntryPoint.class, ApiAccessDeniedHandler.class, ErrorResponseWriter.class})
@@ -70,11 +72,15 @@ class RutasProtegidasSinTokenTest {
     @MockitoBean
     private IEstadoCuentaService estadoCuentaService;
 
+    @MockitoBean
+    private IListadoCuentasService listadoCuentasService;
+
     static Stream<Arguments> rutasProtegidas() {
         return Stream.of(
                 Arguments.of("POST", "/api/v1/cuentas",
                         "{\"tipoDocumento\":\"CC\",\"numeroDocumento\":\"1020304050\",\"tipoCuenta\":\"AHORROS\"}"),
                 Arguments.of("GET", "/api/v1/cuentas/1234567890/saldo", null),
+                Arguments.of("GET", "/api/v1/clientes/" + CUENTA_ID + "/cuentas", null),
                 Arguments.of("POST", "/api/v1/cuentas/" + CUENTA_ID + "/retiros", "{\"monto\":1000.00}"),
                 Arguments.of("POST", "/api/v1/cuentas/" + CUENTA_ID + "/transferencias",
                         "{\"cuentaDestino\":\"1234567890\",\"monto\":1000.00}"),
@@ -97,6 +103,6 @@ class RutasProtegidasSinTokenTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.path").value(ruta));
-        verifyNoInteractions(cuentaService, saldoService, retiroService, transferenciaService, estadoCuentaService);
+        verifyNoInteractions(cuentaService, saldoService, retiroService, transferenciaService, estadoCuentaService, listadoCuentasService);
     }
 }

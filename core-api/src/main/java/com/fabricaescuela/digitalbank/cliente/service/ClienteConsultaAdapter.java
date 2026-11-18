@@ -32,4 +32,15 @@ public class ClienteConsultaAdapter implements IClienteConsulta {
                         "ACTIVO".equals(rs.getString("estado"))))
                 .optional();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existePorId(UUID clienteId) {
+        Long total = jdbcClient
+                .sql("SELECT count(*) FROM cliente WHERE id = :id")
+                .param("id", clienteId)
+                .query(Long.class)
+                .single();
+        return total > 0;
+    }
 }
