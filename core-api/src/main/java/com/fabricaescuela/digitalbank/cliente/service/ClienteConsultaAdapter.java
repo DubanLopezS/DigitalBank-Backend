@@ -32,4 +32,15 @@ public class ClienteConsultaAdapter implements IClienteConsulta {
                         "ACTIVO".equals(rs.getString("estado"))))
                 .optional();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean estaActivoPorId(UUID clienteId) {
+        return jdbcClient
+                .sql("SELECT estado FROM cliente WHERE id = :id")
+                .param("id", clienteId)
+                .query((rs, rowNum) -> "ACTIVO".equals(rs.getString("estado")))
+                .optional()
+                .orElse(false);
+    }
 }

@@ -18,12 +18,15 @@ public class MovimientoJdbcRepository implements IMovimientoRepository {
 
     // La cuenta relacionada sale de la otra fila con el mismo transferencia_id.
     // En depositos y retiros transferencia_id es NULL, asi que el LEFT JOIN no encuentra nada.
+    // El filtro otra.tipo = t.tipo evita duplicados: el reverso de una transferencia reutiliza su
+    // transferencia_id, asi que sin este filtro cada fila haria match con las dos piernas del reverso.
     private static final String SELECT_MOVIMIENTOS = """
             SELECT t.id, t.tipo, t.monto, t.fecha_hora, t.saldo_anterior, t.saldo_nuevo, t.estado,
                    t.origen, t.sentido, t.descripcion, t.transferencia_id,
                    c.numero_cuenta AS numero_cuenta_relacionada
             FROM transaccion t
-            LEFT JOIN transaccion otra ON otra.transferencia_id = t.transferencia_id AND otra.id <> t.id
+            LEFT JOIN transaccion otra ON otra.transferencia_id = t.transferencia_id
+                   AND otra.id <> t.id AND otra.tipo = t.tipo
             LEFT JOIN cuenta c ON c.id = otra.cuenta_id
             """;
 

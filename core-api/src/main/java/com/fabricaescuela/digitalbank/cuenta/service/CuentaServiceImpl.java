@@ -10,9 +10,11 @@ import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoEncontradoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoHabilitadoException;
+import com.fabricaescuela.digitalbank.cuenta.exception.ClienteInvolucradoInactivoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoDisponibleException;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoEncontradaException;
 import com.fabricaescuela.digitalbank.cuenta.exception.SaldoInsuficienteException;
+import com.fabricaescuela.digitalbank.cuenta.exception.SaldoReversoInsuficienteException;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.repositories.ICuentaRepository;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ICuentaService;
 import org.slf4j.Logger;
@@ -114,6 +116,40 @@ public class CuentaServiceImpl implements ICuentaService {
 
         BigDecimal saldoAnterior = cuenta.getSaldoContable();
         cuenta.debitar(monto);
+        Cuenta cuentaActualizada = cuentaRepository.save(cuenta);
+
+        return new MovimientoSaldoResponse(
+                cuentaActualizada.getId(),
+                saldoAnterior,
+                cuentaActualizada.getSaldoContable()
+        );
+    }
+
+    @Override
+    @Transactional
+    public MovimientoSaldoResponse aplicarReverso(UUID cuentaId, BigDecimal monto, boolean credito) {
+        validarMonto(monto);
+
+        Cuenta cuenta = cuentaRepository.findByIdForUpdate(cuentaId)
+                .orElseThrow(CuentaNoEncontradaException::new);
+
+        if (cuenta.estaCerrada()) {
+            throw new CuentaNoDisponibleException("Cuenta no disponible");
+        }
+
+        if (!clienteService.estaActivoPorId(cuenta.getClienteId())) {
+            throw new ClienteInvolucradoInactivoException();
+        }
+
+        BigDecimal saldoAnterior = cuenta.getSaldoContable();
+        if (credito) {
+            cuenta.acreditar(monto);
+        } else {
+            if (cuenta.getSaldoDisponible().compareTo(monto) < 0) {
+                throw new SaldoReversoInsuficienteException();
+            }
+            cuenta.debitar(monto);
+        }
         Cuenta cuentaActualizada = cuentaRepository.save(cuenta);
 
         return new MovimientoSaldoResponse(

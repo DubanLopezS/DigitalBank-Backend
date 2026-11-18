@@ -106,6 +106,7 @@ La prioridad y la razón de cada endpoint están en [docs/apis-priorizadas.md](d
 | Método y ruta | HU | Qué hace | Rol | Códigos de respuesta |
 |---|---|---|---|---|
 | `PATCH /api/v1/clientes/{clienteId}` | HU-03 Actualización de datos del cliente | Actualiza el correo o el teléfono de un cliente, con auditoría de cada cambio; el correo nuevo también pasa a ser el de su login | ADMIN | `200` actualizado · `400` correo o teléfono inválido, o sin datos · `401` sin token o token inválido · `403` no es ADMIN · `404` cliente no encontrado · `409` el correo ya está registrado |
+| `POST /api/v1/transacciones/{transaccionId}/reversos` | HU-12 Reverso de transacción | Reversa una transacción errónea (depósito, retiro o transferencia): genera una transacción REVERSO ligada a la original, la deja en estado REVERSADA y ajusta los saldos de las cuentas involucradas | ADMIN | `201` creado · `400` motivo inválido (menos de 10 o más de 255 caracteres) · `401` sin token o token inválido · `403` no es ADMIN · `404` transacción no encontrada · `409` transacción no reversable (ya reversada o es un reverso), saldo insuficiente para reversar, cuenta involucrada cerrada, o cliente involucrado inactivo |
 
 ## Swagger y despliegue
 
