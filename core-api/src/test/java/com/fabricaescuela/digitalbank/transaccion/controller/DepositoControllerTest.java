@@ -13,12 +13,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,6 +30,9 @@ class DepositoControllerTest {
     @Mock
     private IDepositoService depositoService;
 
+    @Mock
+    private Authentication authentication;
+
     @InjectMocks
     private DepositoController depositoController;
 
@@ -36,17 +41,35 @@ class DepositoControllerTest {
     void elDepositoResponde201() {
         // Arrange
         UUID cuentaId = UUID.randomUUID();
+        UUID usuarioId = UUID.randomUUID();
         DepositoRequest request = new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.EFECTIVO);
         TransaccionResponse esperada = new TransaccionResponse(
                 UUID.randomUUID(), cuentaId, "DEPOSITO", new BigDecimal("50000.00"),
                 BigDecimal.ZERO, new BigDecimal("50000.00"), "EFECTIVO", "COMPLETADA", LocalDateTime.now());
-        when(depositoService.registrarDeposito(cuentaId, request)).thenReturn(esperada);
+        when(authentication.getPrincipal()).thenReturn(usuarioId);
+        when(depositoService.registrarDeposito(cuentaId, request, usuarioId)).thenReturn(esperada);
 
         // Act
-        ResponseEntity<TransaccionResponse> respuesta = depositoController.depositar(cuentaId, request);
+        ResponseEntity<TransaccionResponse> respuesta = depositoController.depositar(cuentaId, request, authentication);
 
         // Assert
         assertThat(respuesta.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(respuesta.getBody()).isEqualTo(esperada);
+    }
+
+    @Test
+    @DisplayName("El usuario del principal se pasa al servicio para guardarlo en la transaccion")
+    void elUsuarioDelPrincipalLlegaAlServicio() {
+        // Arrange
+        UUID cuentaId = UUID.randomUUID();
+        UUID usuarioId = UUID.randomUUID();
+        DepositoRequest request = new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.CHEQUE);
+        when(authentication.getPrincipal()).thenReturn(usuarioId);
+
+        // Act
+        depositoController.depositar(cuentaId, request, authentication);
+
+        // Assert
+        verify(depositoService).registrarDeposito(cuentaId, request, usuarioId);
     }
 }
