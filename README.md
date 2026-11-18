@@ -106,6 +106,7 @@ La prioridad y la razón de cada endpoint están en [docs/apis-priorizadas.md](d
 | Método y ruta | HU | Qué hace | Rol | Códigos de respuesta |
 |---|---|---|---|---|
 | `PATCH /api/v1/clientes/{clienteId}` | HU-03 Actualización de datos del cliente | Actualiza el correo o el teléfono de un cliente, con auditoría de cada cambio; el correo nuevo también pasa a ser el de su login | ADMIN | `200` actualizado · `400` correo o teléfono inválido, o sin datos · `401` sin token o token inválido · `403` no es ADMIN · `404` cliente no encontrado · `409` el correo ya está registrado |
+| `GET /api/v1/reportes/transacciones/{transaccionId}` | HU-14 Detalle de una transacción | Muestra una transacción con sus cuentas origen y destino; el usuario que la originó solo aparece si consulta un ADMIN | CLIENTE, ADMIN | `200` ok · `400` id inválido · `401` sin token o token inválido · `403` cliente sin acceso, o CAJERO · `404` transacción no encontrada (solo ADMIN) |
 
 ## Swagger y despliegue
 

@@ -36,6 +36,7 @@ import static org.mockito.Mockito.when;
 class DepositoServiceImplTest {
 
     private static final UUID CUENTA_ID = UUID.randomUUID();
+    private static final UUID USUARIO_ID = UUID.randomUUID();
 
     @Mock
     private ICuentaService cuentaService;
@@ -56,7 +57,7 @@ class DepositoServiceImplTest {
         prepararAcreditacion(new BigDecimal("50000.00"), new BigDecimal("100000.00"), new BigDecimal("150000.00"));
 
         // Act
-        depositoService.registrarDeposito(CUENTA_ID, new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.EFECTIVO));
+        depositoService.registrarDeposito(CUENTA_ID, new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.EFECTIVO), USUARIO_ID);
 
         // Assert
         verify(cuentaService).acreditar(CUENTA_ID, new BigDecimal("50000.00"));
@@ -69,7 +70,7 @@ class DepositoServiceImplTest {
         prepararAcreditacion(new BigDecimal("50000.00"), new BigDecimal("100000.00"), new BigDecimal("150000.00"));
 
         // Act
-        depositoService.registrarDeposito(CUENTA_ID, new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.CHEQUE));
+        depositoService.registrarDeposito(CUENTA_ID, new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.CHEQUE), USUARIO_ID);
 
         // Assert
         verify(transaccionRepository).save(transaccionCaptor.capture());
@@ -82,6 +83,21 @@ class DepositoServiceImplTest {
     }
 
     @Test
+    @DisplayName("La transaccion del deposito guarda el usuario que lo registro")
+    void laTransaccionGuardaElUsuario() {
+        // Arrange
+        prepararAcreditacion(new BigDecimal("50000.00"), new BigDecimal("100000.00"), new BigDecimal("150000.00"));
+
+        // Act
+        depositoService.registrarDeposito(
+                CUENTA_ID, new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.EFECTIVO), USUARIO_ID);
+
+        // Assert
+        verify(transaccionRepository).save(transaccionCaptor.capture());
+        assertThat(transaccionCaptor.getValue().getUsuarioId()).isEqualTo(USUARIO_ID);
+    }
+
+    @Test
     @DisplayName("La respuesta expone la transaccion COMPLETADA de tipo DEPOSITO")
     void laRespuestaExponeLaTransaccionCompletada() {
         // Arrange
@@ -89,7 +105,7 @@ class DepositoServiceImplTest {
 
         // Act
         TransaccionResponse response = depositoService.registrarDeposito(
-                CUENTA_ID, new DepositoRequest(new BigDecimal("80000.00"), OrigenDeposito.OTRO));
+                CUENTA_ID, new DepositoRequest(new BigDecimal("80000.00"), OrigenDeposito.OTRO), USUARIO_ID);
 
         // Assert
         assertThat(response.cuentaId()).isEqualTo(CUENTA_ID);
@@ -111,7 +127,7 @@ class DepositoServiceImplTest {
 
         // Act & Assert
         assertThatThrownBy(() -> depositoService.registrarDeposito(
-                CUENTA_ID, new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.EFECTIVO)))
+                CUENTA_ID, new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.EFECTIVO), USUARIO_ID))
                 .isSameAs(excepcion);
 
         verifyNoInteractions(transaccionRepository);
@@ -126,7 +142,7 @@ class DepositoServiceImplTest {
 
         // Act & Assert
         assertThatThrownBy(() -> depositoService.registrarDeposito(
-                CUENTA_ID, new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.EFECTIVO)))
+                CUENTA_ID, new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.EFECTIVO), USUARIO_ID))
                 .isSameAs(excepcion);
 
         verifyNoInteractions(transaccionRepository);
@@ -146,7 +162,7 @@ class DepositoServiceImplTest {
         });
 
         // Act
-        depositoService.registrarDeposito(CUENTA_ID, new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.EFECTIVO));
+        depositoService.registrarDeposito(CUENTA_ID, new DepositoRequest(new BigDecimal("50000.00"), OrigenDeposito.EFECTIVO), USUARIO_ID);
 
         // Assert
         assertThat(salida.getAll())

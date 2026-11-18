@@ -27,7 +27,9 @@ public class TransferenciaController {
                                                             @Valid @RequestBody TransferenciaRequest request,
                                                             Authentication authentication) {
         UUID clienteId = (UUID) authentication.getDetails();
-        TransferenciaResponse response = transferenciaService.registrarTransferencia(cuentaId, request, clienteId);
+        UUID usuarioId = (UUID) authentication.getPrincipal();
+        TransferenciaResponse response = transferenciaService.registrarTransferencia(
+                cuentaId, request, clienteId, usuarioId);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

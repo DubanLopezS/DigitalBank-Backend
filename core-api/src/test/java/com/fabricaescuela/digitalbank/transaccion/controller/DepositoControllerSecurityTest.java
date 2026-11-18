@@ -88,12 +88,13 @@ class DepositoControllerSecurityTest {
 
     @ParameterizedTest(name = "Un {0} puede depositar y responde 201")
     @ValueSource(strings = {"ADMIN", "CAJERO"})
-    @DisplayName("ADMIN y CAJERO pasan la seguridad y el deposito responde 201")
+    @DisplayName("ADMIN y CAJERO pasan la seguridad, el deposito responde 201 y lleva el usuario del token")
     void personalAutorizadoDeposita201(String rol) throws Exception {
         // Arrange
+        UUID usuarioId = UUID.randomUUID();
         DepositoRequest request = new DepositoRequest(MONTO, OrigenDeposito.EFECTIVO);
-        autenticarComo(rol, null);
-        when(depositoService.registrarDeposito(CUENTA_ID, request)).thenReturn(new TransaccionResponse(
+        autenticarComo(usuarioId, rol, null);
+        when(depositoService.registrarDeposito(CUENTA_ID, request, usuarioId)).thenReturn(new TransaccionResponse(
                 UUID.randomUUID(), CUENTA_ID, "DEPOSITO", MONTO, BigDecimal.ZERO, MONTO,
                 "EFECTIVO", "COMPLETADA", LocalDateTime.now()));
 
@@ -104,7 +105,7 @@ class DepositoControllerSecurityTest {
                         .content(BODY_VALIDO))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.tipo").value("DEPOSITO"));
-        verify(depositoService).registrarDeposito(CUENTA_ID, request);
+        verify(depositoService).registrarDeposito(CUENTA_ID, request, usuarioId);
     }
 
     @Test
@@ -125,8 +126,12 @@ class DepositoControllerSecurityTest {
     }
 
     private void autenticarComo(String rol, UUID clienteId) {
+        autenticarComo(UUID.randomUUID(), rol, clienteId);
+    }
+
+    private void autenticarComo(UUID usuarioId, String rol, UUID clienteId) {
         when(jwtService.esTokenValido(TOKEN)).thenReturn(true);
-        when(jwtService.extraerUsuarioId(TOKEN)).thenReturn(UUID.randomUUID());
+        when(jwtService.extraerUsuarioId(TOKEN)).thenReturn(usuarioId);
         when(jwtService.extraerRol(TOKEN)).thenReturn(rol);
         when(jwtService.extraerClienteId(TOKEN)).thenReturn(clienteId);
     }

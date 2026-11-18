@@ -28,5 +28,6 @@ Endpoints sacados de los controllers de `main`. El rol sale de `@PreAuthorize` c
 | endpoint | HU | sprint | rol | prioridad | razón |
 | --- | --- | --- | --- | --- | --- |
 | `GET /api/v1/reportes/cuentas/{cuentaId}/movimientos` | HU-13 Historial de transacciones por cuenta | 2 | CLIENTE (solo sus cuentas), ADMIN y CAJERO (cualquier cuenta), sin `@PreAuthorize`: lo decide `MovimientoServiceImpl` (ADR-0005) | baja | Es de solo lectura y, si falla, no afecta saldos ni bloquea otra HU. |
+| `GET /api/v1/reportes/transacciones/{transaccionId}` | HU-14 Detalle de una transacción | 3 | CLIENTE y ADMIN (`@PreAuthorize`, el CAJERO recibe 403). Al CLIENTE `TransaccionServiceImpl` le exige que la cuenta origen o la destino sea suya y le responde 403 también si la transacción no existe (ADR-0005) | baja | Es de solo lectura y, si falla, no afecta saldos ni bloquea otra HU. El usuario que originó la transacción solo se le muestra al ADMIN. |
 
 Las tres APIs dejan además `/error`, `/swagger-ui/**`, `/swagger-ui.html` y `/v3/api-docs/**` sin token. No son de ninguna HU.
