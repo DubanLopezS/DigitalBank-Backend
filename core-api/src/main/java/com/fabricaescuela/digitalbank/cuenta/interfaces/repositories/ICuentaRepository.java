@@ -26,4 +26,6 @@ public interface ICuentaRepository {
     List<Cuenta> findByClienteIdOrderByFechaAperturaAsc(UUID clienteId);
 
     List<Cuenta> findByClienteIdAndEstadoOrderByFechaAperturaAsc(UUID clienteId, EstadoCuenta estado);
+
+    List<UUID> findIdsByClienteId(UUID clienteId);
 }

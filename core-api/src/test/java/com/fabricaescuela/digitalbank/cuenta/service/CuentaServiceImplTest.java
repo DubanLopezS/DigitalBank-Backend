@@ -3,6 +3,7 @@ package com.fabricaescuela.digitalbank.cuenta.service;
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteResumenResponse;
 import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
 import com.fabricaescuela.digitalbank.cliente.interfaces.services.IClienteConsulta;
+import com.fabricaescuela.digitalbank.cliente.interfaces.services.IClienteEstado;
 import com.fabricaescuela.digitalbank.core.exception.AccesoNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.dto.AperturaCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
@@ -52,6 +53,9 @@ class CuentaServiceImplTest {
     @Mock
     private GeneradorNumeroCuenta generadorNumeroCuenta;
 
+    @Mock
+    private IClienteEstado clienteEstado;
+
     @InjectMocks
     private CuentaServiceImpl cuentaService;
 
@@ -71,7 +75,7 @@ class CuentaServiceImplTest {
     }
 
     @Test
-    @DisplayName("AC-2: cliente INACTIVO no puede abrir cuenta, responde 403 'Cliente no habilitado'")
+    @DisplayName("AC-2 y HU-04: cliente INACTIVO no puede abrir cuenta, responde 409 CLIENTE_NO_HABILITADO")
     void clienteInactivoNoPuedeAbrirCuenta() {
         when(clienteService.obtenerResumenPorDocumento(TipoDocumento.CC, DOCUMENTO))
                 .thenReturn(Optional.of(new ClienteResumenResponse(CLIENTE_ID, false)));
@@ -82,7 +86,8 @@ class CuentaServiceImplTest {
         );
 
         assertEquals("Cliente no habilitado", ex.getMessage());
-        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        assertEquals("CLIENTE_NO_HABILITADO", ex.getErrorCode());
         verify(cuentaRepository, never()).save(any());
     }
 
@@ -496,6 +501,87 @@ class CuentaServiceImplTest {
         );
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
+    }
+
+    @Test
+    @DisplayName("HU-04: la cuenta de un cliente INACTIVO no recibe depositos, responde 409 CLIENTE_NO_HABILITADO")
+    void acreditarAClienteInactivoRespondeConflict() {
+        // Arrange
+        Cuenta cuenta = cuentaConSaldo(BigDecimal.ZERO);
+        ReflectionTestUtils.setField(cuenta, "estado", EstadoCuenta.BLOQUEADA);
+        when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
+        when(clienteEstado.estaInactivo(CLIENTE_ID)).thenReturn(true);
+
+        // Act & Assert
+        ClienteNoHabilitadoException ex = assertThrows(
+                ClienteNoHabilitadoException.class,
+                () -> cuentaService.acreditar(CUENTA_ID, new BigDecimal("50000.00"))
+        );
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        assertEquals("CLIENTE_NO_HABILITADO", ex.getErrorCode());
+        assertEquals(0, cuenta.getSaldoContable().compareTo(BigDecimal.ZERO));
+        verify(cuentaRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("HU-04: un cliente INACTIVO no puede retirar, responde 409 CLIENTE_NO_HABILITADO y no 'Cuenta no disponible'")
+    void debitarAClienteInactivoRespondeConflict() {
+        // Arrange
+        Cuenta cuenta = cuentaConSaldo(new BigDecimal("100000.00"));
+        ReflectionTestUtils.setField(cuenta, "estado", EstadoCuenta.BLOQUEADA);
+        when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
+        when(clienteEstado.estaInactivo(CLIENTE_ID)).thenReturn(true);
+
+        // Act & Assert
+        ClienteNoHabilitadoException ex = assertThrows(
+                ClienteNoHabilitadoException.class,
+                () -> cuentaService.debitar(CUENTA_ID, new BigDecimal("1000.00"))
+        );
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        assertEquals("CLIENTE_NO_HABILITADO", ex.getErrorCode());
+        verify(cuentaRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("HU-04: el estado del cliente se lee despues de bloquear la cuenta")
+    void elEstadoDelClienteSeLeeDespuesDeBloquearLaCuenta() {
+        // Arrange
+        Cuenta cuenta = cuentaConSaldo(new BigDecimal("100000.00"));
+        when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
+        when(cuentaRepository.save(any(Cuenta.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        cuentaService.debitar(CUENTA_ID, new BigDecimal("1000.00"));
+
+        // Assert
+        InOrder orden = inOrder(cuentaRepository, clienteEstado);
+        orden.verify(cuentaRepository).findByIdForUpdate(CUENTA_ID);
+        orden.verify(clienteEstado).estaInactivo(CLIENTE_ID);
+        orden.verify(cuentaRepository).save(cuenta);
+    }
+
+    @Test
+    @DisplayName("HU-04: esDeClienteInactivo consulta el estado del titular de la cuenta")
+    void esDeClienteInactivoConsultaAlTitular() {
+        // Arrange
+        when(cuentaRepository.findById(CUENTA_ID)).thenReturn(Optional.of(cuentaConSaldo(BigDecimal.ZERO)));
+        when(clienteEstado.estaInactivo(CLIENTE_ID)).thenReturn(true);
+
+        // Act & Assert
+        assertTrue(cuentaService.esDeClienteInactivo(CUENTA_ID));
+    }
+
+    @Test
+    @DisplayName("HU-04: esDeClienteInactivo con cuenta inexistente responde 404")
+    void esDeClienteInactivoConCuentaInexistenteRespondeNotFound() {
+        // Arrange
+        when(cuentaRepository.findById(CUENTA_ID)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(CuentaNoEncontradaException.class, () -> cuentaService.esDeClienteInactivo(CUENTA_ID));
+        verifyNoInteractions(clienteEstado);
     }
 
     private Cuenta cuentaConSaldo(BigDecimal saldo) {

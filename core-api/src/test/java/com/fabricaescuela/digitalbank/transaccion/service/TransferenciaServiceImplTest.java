@@ -2,6 +2,7 @@ package com.fabricaescuela.digitalbank.transaccion.service;
 
 import com.fabricaescuela.digitalbank.core.exception.AccesoNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.dto.MovimientoSaldoResponse;
+import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoHabilitadoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoDisponibleException;
 import com.fabricaescuela.digitalbank.cuenta.exception.SaldoInsuficienteException;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ICuentaService;
@@ -307,6 +308,50 @@ class TransferenciaServiceImplTest {
         assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID, USUARIO_ID))
                 .isSameAs(excepcion);
 
+        verifyNoInteractions(transaccionRepository);
+    }
+
+    @Test
+    @DisplayName("HU-04: un cliente INACTIVO no puede transferir, responde 409 CLIENTE_NO_HABILITADO aunque la cuenta este bloqueada")
+    void origenDeClienteInactivoRespondeClienteNoHabilitado() {
+        // Arrange
+        when(cuentaService.buscarIdPorNumero(CUENTA_DESTINO)).thenReturn(Optional.of(DESTINO_ID));
+        when(cuentaService.esDeClienteInactivo(CUENTA_ID)).thenReturn(true);
+
+        // Act & Assert
+        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID, USUARIO_ID))
+                .isInstanceOfSatisfying(ClienteNoHabilitadoException.class, ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(ex.getErrorCode()).isEqualTo("CLIENTE_NO_HABILITADO");
+                });
+
+        InOrder orden = inOrder(cuentaService);
+        orden.verify(cuentaService).bloquearEnOrden(CUENTA_ID, DESTINO_ID);
+        orden.verify(cuentaService).esDeClienteInactivo(CUENTA_ID);
+        verify(cuentaService, never()).estaBloqueada(CUENTA_ID);
+        verify(cuentaService, never()).debitar(any(UUID.class), any(BigDecimal.class));
+        verify(cuentaService, never()).acreditar(any(UUID.class), any(BigDecimal.class));
+        verifyNoInteractions(transaccionRepository);
+    }
+
+    @Test
+    @DisplayName("HU-04: la cuenta de un cliente INACTIVO no recibe transferencias, responde 409 CUENTA_DESTINO_NO_DISPONIBLE")
+    void destinoDeClienteInactivoRespondeCuentaDestinoNoDisponible() {
+        // Arrange
+        when(cuentaService.buscarIdPorNumero(CUENTA_DESTINO)).thenReturn(Optional.of(DESTINO_ID));
+        when(cuentaService.esDeClienteInactivo(CUENTA_ID)).thenReturn(false);
+        when(cuentaService.esDeClienteInactivo(DESTINO_ID)).thenReturn(true);
+
+        // Act & Assert
+        assertThatThrownBy(() -> transferenciaService.registrarTransferencia(CUENTA_ID, request(), CLIENTE_ID, USUARIO_ID))
+                .isInstanceOfSatisfying(CuentaDestinoNoDisponibleException.class, ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(ex.getErrorCode()).isEqualTo("CUENTA_DESTINO_NO_DISPONIBLE");
+                });
+
+        verify(cuentaService).bloquearEnOrden(CUENTA_ID, DESTINO_ID);
+        verify(cuentaService, never()).debitar(any(UUID.class), any(BigDecimal.class));
+        verify(cuentaService, never()).acreditar(any(UUID.class), any(BigDecimal.class));
         verifyNoInteractions(transaccionRepository);
     }
 

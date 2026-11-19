@@ -1,6 +1,7 @@
 package com.fabricaescuela.digitalbank.transaccion.service;
 
 import com.fabricaescuela.digitalbank.cuenta.dto.MovimientoSaldoResponse;
+import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoHabilitadoException;
 import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ICuentaService;
 import com.fabricaescuela.digitalbank.transaccion.dto.TransferenciaRequest;
 import com.fabricaescuela.digitalbank.transaccion.dto.TransferenciaResponse;
@@ -91,6 +92,10 @@ public class TransferenciaServiceImpl implements ITransferenciaService {
     }
 
     private void validarCuentaOrigenDisponible(UUID origenId) {
+        // HU-04: un cliente inactivo no puede transferir, aunque su token siga vigente.
+        if (cuentaService.esDeClienteInactivo(origenId)) {
+            throw new ClienteNoHabilitadoException("Cliente no habilitado");
+        }
         if (cuentaService.estaBloqueada(origenId)) {
             throw new CuentaOrigenBloqueadaException();
         }
@@ -100,7 +105,8 @@ public class TransferenciaServiceImpl implements ITransferenciaService {
     }
 
     private void validarCuentaDestinoDisponible(UUID destinoId) {
-        if (cuentaService.estaCerrada(destinoId)) {
+        // HU-04: la cuenta de un cliente inactivo no recibe transferencias.
+        if (cuentaService.estaCerrada(destinoId) || cuentaService.esDeClienteInactivo(destinoId)) {
             throw new CuentaDestinoNoDisponibleException();
         }
     }

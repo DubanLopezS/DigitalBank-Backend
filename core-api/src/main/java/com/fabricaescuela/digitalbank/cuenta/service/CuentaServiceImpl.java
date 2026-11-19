@@ -2,6 +2,7 @@ package com.fabricaescuela.digitalbank.cuenta.service;
 
 import com.fabricaescuela.digitalbank.cliente.dto.ClienteResumenResponse;
 import com.fabricaescuela.digitalbank.cliente.interfaces.services.IClienteConsulta;
+import com.fabricaescuela.digitalbank.cliente.interfaces.services.IClienteEstado;
 import com.fabricaescuela.digitalbank.core.exception.AccesoNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.dto.AperturaCuentaRequest;
 import com.fabricaescuela.digitalbank.cuenta.dto.CuentaResponse;
@@ -34,13 +35,16 @@ public class CuentaServiceImpl implements ICuentaService {
     private final ICuentaRepository cuentaRepository;
     private final IClienteConsulta clienteService;
     private final GeneradorNumeroCuenta generadorNumeroCuenta;
+    private final IClienteEstado clienteEstado;
 
     public CuentaServiceImpl(ICuentaRepository cuentaRepository,
                             IClienteConsulta clienteService,
-                            GeneradorNumeroCuenta generadorNumeroCuenta) {
+                            GeneradorNumeroCuenta generadorNumeroCuenta,
+                            IClienteEstado clienteEstado) {
         this.cuentaRepository = cuentaRepository;
         this.clienteService = clienteService;
         this.generadorNumeroCuenta = generadorNumeroCuenta;
+        this.clienteEstado = clienteEstado;
     }
 
     @Override
@@ -83,6 +87,7 @@ public class CuentaServiceImpl implements ICuentaService {
         Cuenta cuenta = cuentaRepository.findByIdForUpdate(cuentaId)
                 .orElseThrow(CuentaNoEncontradaException::new);
 
+        validarClienteHabilitado(cuenta);
         validarCuentaDisponible(cuenta);
 
         BigDecimal saldoAnterior = cuenta.getSaldoContable();
@@ -103,6 +108,8 @@ public class CuentaServiceImpl implements ICuentaService {
 
         Cuenta cuenta = cuentaRepository.findByIdForUpdate(cuentaId)
                 .orElseThrow(CuentaNoEncontradaException::new);
+
+        validarClienteHabilitado(cuenta);
 
         if (!cuenta.estaActiva()) {
             throw new CuentaNoDisponibleException("Cuenta no disponible");
@@ -162,6 +169,14 @@ public class CuentaServiceImpl implements ICuentaService {
 
     @Override
     @Transactional
+    public boolean esDeClienteInactivo(UUID cuentaId) {
+        Cuenta cuenta = cuentaRepository.findById(cuentaId)
+                .orElseThrow(CuentaNoEncontradaException::new);
+        return clienteEstado.estaInactivo(cuenta.getClienteId());
+    }
+
+    @Override
+    @Transactional
     public void bloquearEnOrden(UUID cuentaIdA, UUID cuentaIdB) {
         UUID menor = cuentaIdA;
         UUID mayor = cuentaIdB;
@@ -172,6 +187,14 @@ public class CuentaServiceImpl implements ICuentaService {
 
         cuentaRepository.findByIdForUpdate(menor).orElseThrow(CuentaNoEncontradaException::new);
         cuentaRepository.findByIdForUpdate(mayor).orElseThrow(CuentaNoEncontradaException::new);
+    }
+
+    // HU-04: se lee el estado del cliente en la base, con la cuenta ya bloqueada, porque
+    // el token de un cliente inactivado sigue vigente hasta que expira.
+    private void validarClienteHabilitado(Cuenta cuenta) {
+        if (clienteEstado.estaInactivo(cuenta.getClienteId())) {
+            throw new ClienteNoHabilitadoException("Cliente no habilitado");
+        }
     }
 
     private void validarCuentaDisponible(Cuenta cuenta) {

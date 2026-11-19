@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class ClienteNoHabilitadoException extends ApiException {
     public ClienteNoHabilitadoException(String message) {
-        super(HttpStatus.FORBIDDEN, "CLIENTE_NO_HABILITADO", message);
+        super(HttpStatus.CONFLICT, "CLIENTE_NO_HABILITADO", message);
     }
 }
