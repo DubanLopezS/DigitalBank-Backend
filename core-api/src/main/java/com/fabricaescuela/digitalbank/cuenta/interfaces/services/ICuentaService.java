@@ -26,4 +26,6 @@ public interface ICuentaService {
     boolean estaCerrada(UUID cuentaId);
 
     boolean estaBloqueada(UUID cuentaId);
+
+    boolean esDeClienteInactivo(UUID cuentaId);
 }

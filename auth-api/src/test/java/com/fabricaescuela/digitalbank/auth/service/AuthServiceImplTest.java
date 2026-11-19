@@ -5,9 +5,14 @@ import com.fabricaescuela.digitalbank.auth.dto.LoginResponse;
 import com.fabricaescuela.digitalbank.auth.entity.EstadoSeguridad;
 import com.fabricaescuela.digitalbank.auth.entity.Rol;
 import com.fabricaescuela.digitalbank.auth.entity.Usuario;
+import com.fabricaescuela.digitalbank.auth.exception.ClienteNoHabilitadoException;
 import com.fabricaescuela.digitalbank.auth.exception.CredencialesInvalidasException;
 import com.fabricaescuela.digitalbank.auth.exception.CuentaBloqueadaException;
 import com.fabricaescuela.digitalbank.auth.interfaces.repositories.IUsuarioRepository;
+import com.fabricaescuela.digitalbank.cliente.entity.Cliente;
+import com.fabricaescuela.digitalbank.cliente.entity.EstadoCliente;
+import com.fabricaescuela.digitalbank.cliente.entity.TipoDocumento;
+import com.fabricaescuela.digitalbank.cliente.interfaces.repositories.IClienteRepository;
 import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,6 +28,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -52,6 +58,9 @@ class AuthServiceImplTest {
 
     @Mock
     private IJwtService jwtService;
+
+    @Mock
+    private IClienteRepository clienteRepository;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -295,6 +304,68 @@ class AuthServiceImplTest {
         assertThat(salida.getAll())
                 .contains("evento=LOGIN_RECHAZADO_USUARIO_BLOQUEADO usuarioId=" + usuario.getId())
                 .doesNotContain(EMAIL);
+    }
+
+    @Test
+    @DisplayName("HU-04: un cliente INACTIVO con la clave correcta recibe 403 CLIENTE_NO_HABILITADO y no recibe token")
+    void clienteInactivoNoPuedeIniciarSesion() {
+        // Arrange
+        Usuario usuario = usuarioActivo();
+        when(usuarioRepository.findByEmail(EMAIL)).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(PASSWORD, HASH)).thenReturn(true);
+        when(clienteRepository.findById(usuario.getClienteId())).thenReturn(Optional.of(cliente(EstadoCliente.INACTIVO)));
+
+        // Act & Assert
+        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, PASSWORD)))
+                .isInstanceOfSatisfying(ClienteNoHabilitadoException.class, ex -> {
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.FORBIDDEN);
+                    assertThat(ex.getErrorCode()).isEqualTo("CLIENTE_NO_HABILITADO");
+                    assertThat(ex.getMessage()).isEqualTo("Cliente no habilitado");
+                });
+
+        verify(jwtService, never()).generarToken(any());
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("HU-04: un cliente INACTIVO con la clave incorrecta recibe 401, sin revelar su estado")
+    void clienteInactivoConClaveIncorrectaRecibe401() {
+        // Arrange
+        Usuario usuario = usuarioActivo();
+        when(usuarioRepository.findByEmail(EMAIL)).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(PASSWORD, HASH)).thenReturn(false);
+
+        // Act & Assert
+        assertThatThrownBy(() -> authService.login(new LoginRequest(EMAIL, PASSWORD)))
+                .isInstanceOf(CredencialesInvalidasException.class);
+
+        verifyNoInteractions(clienteRepository);
+    }
+
+    @Test
+    @DisplayName("HU-04: un usuario sin cliente (ADMIN o CAJERO) inicia sesion sin consultar clientes")
+    void usuarioInternoNoConsultaClientes() {
+        // Arrange
+        Usuario admin = new Usuario(null, EMAIL, HASH, Rol.ADMIN);
+        ReflectionTestUtils.setField(admin, "id", UUID.randomUUID());
+        when(usuarioRepository.findByEmail(EMAIL)).thenReturn(Optional.of(admin));
+        when(passwordEncoder.matches(PASSWORD, HASH)).thenReturn(true);
+        when(jwtService.generarToken(admin)).thenReturn(TOKEN);
+        when(jwtService.getExpirationMinutes()).thenReturn(60L);
+
+        // Act
+        LoginResponse response = authService.login(new LoginRequest(EMAIL, PASSWORD));
+
+        // Assert
+        assertThat(response.token()).isEqualTo(TOKEN);
+        verifyNoInteractions(clienteRepository);
+    }
+
+    private Cliente cliente(EstadoCliente estado) {
+        Cliente cliente = new Cliente(TipoDocumento.CC, "1020304050", "Ana", "Gomez",
+                LocalDate.of(1995, 5, 10), "3001234567", EMAIL);
+        ReflectionTestUtils.setField(cliente, "estado", estado);
+        return cliente;
     }
 
     private Usuario usuarioActivo() {
