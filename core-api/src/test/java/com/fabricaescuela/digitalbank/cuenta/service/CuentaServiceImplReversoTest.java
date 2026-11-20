@@ -5,7 +5,7 @@ import com.fabricaescuela.digitalbank.cuenta.dto.MovimientoSaldoResponse;
 import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
 import com.fabricaescuela.digitalbank.cuenta.entity.EstadoCuenta;
 import com.fabricaescuela.digitalbank.cuenta.entity.TipoCuenta;
-import com.fabricaescuela.digitalbank.cuenta.exception.ClienteInvolucradoInactivoException;
+import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoHabilitadoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoDisponibleException;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoEncontradaException;
 import com.fabricaescuela.digitalbank.cuenta.exception.SaldoReversoInsuficienteException;
@@ -108,17 +108,18 @@ class CuentaServiceImplReversoTest {
     }
 
     @Test
-    @DisplayName("Reverso con el cliente de la cuenta inactivo responde 409 CLIENTE_NO_HABILITADO")
-    void reversoClienteInactivoResponde409() {
+    @DisplayName("Reverso con el cliente de la cuenta inactivo responde 403 CLIENTE_NO_HABILITADO")
+    void reversoClienteInactivoResponde403() {
         Cuenta cuenta = cuentaConSaldo(new BigDecimal("100000.00"));
         when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
         when(clienteService.estaActivoPorId(CLIENTE_ID)).thenReturn(false);
 
-        ClienteInvolucradoInactivoException ex = assertThrows(ClienteInvolucradoInactivoException.class,
+        ClienteNoHabilitadoException ex = assertThrows(ClienteNoHabilitadoException.class,
                 () -> cuentaService.aplicarReverso(CUENTA_ID, MONTO, true));
 
         assertEquals("CLIENTE_NO_HABILITADO", ex.getErrorCode());
-        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
+        assertEquals("Cliente no habilitado", ex.getMessage());
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
         verify(cuentaRepository, never()).save(any());
     }
 

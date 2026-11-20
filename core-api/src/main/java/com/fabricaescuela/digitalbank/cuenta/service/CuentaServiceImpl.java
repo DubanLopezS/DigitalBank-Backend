@@ -10,7 +10,6 @@ import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoEncontradoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.ClienteNoHabilitadoException;
-import com.fabricaescuela.digitalbank.cuenta.exception.ClienteInvolucradoInactivoException;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoDisponibleException;
 import com.fabricaescuela.digitalbank.cuenta.exception.CuentaNoEncontradaException;
 import com.fabricaescuela.digitalbank.cuenta.exception.SaldoInsuficienteException;
@@ -138,7 +137,7 @@ public class CuentaServiceImpl implements ICuentaService {
         }
 
         if (!clienteService.estaActivoPorId(cuenta.getClienteId())) {
-            throw new ClienteInvolucradoInactivoException();
+            throw new ClienteNoHabilitadoException("Cliente no habilitado");
         }
 
         BigDecimal saldoAnterior = cuenta.getSaldoContable();
