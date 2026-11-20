@@ -56,6 +56,7 @@ public class Transaccion {
     @Column(length = 255)
     private String descripcion;
 
+    // Usuario que origino la transaccion. Nullable: las transacciones anteriores a la V6 no lo tienen.
     @Column(name = "usuario_id")
     private UUID usuarioId;
 
@@ -68,7 +69,7 @@ public class Transaccion {
     protected Transaccion() {}
 
     public static Transaccion deposito(UUID cuentaId, BigDecimal monto, BigDecimal saldoAnterior,
-                                        BigDecimal saldoNuevo, OrigenDeposito origen) {
+                                        BigDecimal saldoNuevo, OrigenDeposito origen, UUID usuarioId) {
         Transaccion transaccion = new Transaccion();
         transaccion.cuentaId = cuentaId;
         transaccion.tipo = TipoTransaccion.DEPOSITO;
@@ -76,23 +77,26 @@ public class Transaccion {
         transaccion.saldoAnterior = saldoAnterior;
         transaccion.saldoNuevo = saldoNuevo;
         transaccion.origen = origen;
+        transaccion.usuarioId = usuarioId;
         return transaccion;
     }
 
     public static Transaccion retiro(UUID cuentaId, BigDecimal monto, BigDecimal saldoAnterior,
-                                     BigDecimal saldoNuevo) {
+                                     BigDecimal saldoNuevo, UUID usuarioId) {
         Transaccion transaccion = new Transaccion();
         transaccion.cuentaId = cuentaId;
         transaccion.tipo = TipoTransaccion.RETIRO;
         transaccion.monto = monto;
         transaccion.saldoAnterior = saldoAnterior;
         transaccion.saldoNuevo = saldoNuevo;
+        transaccion.usuarioId = usuarioId;
         return transaccion;
     }
 
     public static Transaccion transferencia(UUID cuentaId, BigDecimal monto, BigDecimal saldoAnterior,
                                             BigDecimal saldoNuevo, UUID transferenciaId,
-                                            SentidoTransferencia sentido, String descripcion) {
+                                            SentidoTransferencia sentido, String descripcion,
+                                            UUID usuarioId) {
         Transaccion transaccion = new Transaccion();
         transaccion.cuentaId = cuentaId;
         transaccion.tipo = TipoTransaccion.TRANSFERENCIA;
@@ -102,6 +106,7 @@ public class Transaccion {
         transaccion.transferenciaId = transferenciaId;
         transaccion.sentido = sentido;
         transaccion.descripcion = descripcion;
+        transaccion.usuarioId = usuarioId;
         return transaccion;
     }
 

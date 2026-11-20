@@ -18,6 +18,7 @@ import java.util.UUID;
  * Se ejecuta en cada request. Si viene un JWT válido en el header Authorization,
  * le informa a Spring Security quién es el usuario y qué rol tiene,
  * para que @PreAuthorize pueda evaluar permisos más adelante.
+ * El clienteId del token (null para ADMIN y CAJERO) queda en authentication.getDetails().
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter implements FiltroAutenticacionJwt {
@@ -40,12 +41,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter implements Fil
             if (jwtService.esTokenValido(token)) {
                 UUID usuarioId = jwtService.extraerUsuarioId(token);
                 String rol = jwtService.extraerRol(token);
+                UUID clienteId = jwtService.extraerClienteId(token);
 
                 var authentication = new UsernamePasswordAuthenticationToken(
                         usuarioId,
                         null,
                         List.of(new SimpleGrantedAuthority("ROLE_" + rol))
                 );
+                authentication.setDetails(clienteId);
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }

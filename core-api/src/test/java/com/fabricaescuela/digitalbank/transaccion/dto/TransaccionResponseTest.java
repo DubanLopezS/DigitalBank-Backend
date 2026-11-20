@@ -18,7 +18,8 @@ class TransaccionResponseTest {
     void depositoExponeElOrigenComoTexto() {
         // Arrange
         Transaccion deposito = Transaccion.deposito(
-                UUID.randomUUID(), BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.TEN, OrigenDeposito.CHEQUE);
+                UUID.randomUUID(), BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.TEN, OrigenDeposito.CHEQUE,
+                UUID.randomUUID());
 
         // Act
         TransaccionResponse response = TransaccionResponse.from(deposito);
@@ -33,7 +34,8 @@ class TransaccionResponseTest {
     void retiroSeExponeSinOrigen() {
         // Arrange
         Transaccion retiro = Transaccion.retiro(
-                UUID.randomUUID(), new BigDecimal("30000.00"), new BigDecimal("100000.00"), new BigDecimal("70000.00"));
+                UUID.randomUUID(), new BigDecimal("30000.00"), new BigDecimal("100000.00"), new BigDecimal("70000.00"),
+                UUID.randomUUID());
 
         // Act
         TransaccionResponse response = TransaccionResponse.from(retiro);

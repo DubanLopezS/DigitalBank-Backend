@@ -24,7 +24,7 @@ class TransaccionTest {
 
         // Act
         Transaccion transaccion = Transaccion.deposito(
-                cuentaId, monto, saldoAnterior, saldoNuevo, OrigenDeposito.EFECTIVO);
+                cuentaId, monto, saldoAnterior, saldoNuevo, OrigenDeposito.EFECTIVO, UUID.randomUUID());
 
         // Assert
         assertThat(transaccion.getCuentaId()).isEqualTo(cuentaId);
@@ -45,7 +45,7 @@ class TransaccionTest {
 
         // Act
         Transaccion transaccion = Transaccion.deposito(
-                cuentaId, BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.TEN, OrigenDeposito.CHEQUE);
+                cuentaId, BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.TEN, OrigenDeposito.CHEQUE, UUID.randomUUID());
 
         // Assert
         assertThat(transaccion.getOrigen()).isEqualTo(OrigenDeposito.CHEQUE);
@@ -59,7 +59,7 @@ class TransaccionTest {
 
         // Act
         Transaccion transaccion = Transaccion.deposito(
-                cuentaId, BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.TEN, OrigenDeposito.EFECTIVO);
+                cuentaId, BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.TEN, OrigenDeposito.EFECTIVO, UUID.randomUUID());
 
         // Assert
         assertThat(transaccion.getTransferenciaId()).isNull();
@@ -78,7 +78,7 @@ class TransaccionTest {
         LocalDateTime antesDeCrear = LocalDateTime.now();
 
         // Act
-        Transaccion transaccion = Transaccion.retiro(cuentaId, monto, saldoAnterior, saldoNuevo);
+        Transaccion transaccion = Transaccion.retiro(cuentaId, monto, saldoAnterior, saldoNuevo, UUID.randomUUID());
 
         // Assert
         assertThat(transaccion.getCuentaId()).isEqualTo(cuentaId);
@@ -97,7 +97,7 @@ class TransaccionTest {
         UUID cuentaId = UUID.randomUUID();
 
         // Act
-        Transaccion transaccion = Transaccion.retiro(cuentaId, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ZERO);
+        Transaccion transaccion = Transaccion.retiro(cuentaId, BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ZERO, UUID.randomUUID());
 
         // Assert
         assertThat(transaccion.getOrigen()).isNull();
@@ -118,7 +118,7 @@ class TransaccionTest {
 
         // Act
         Transaccion transaccion = Transaccion.transferencia(cuentaId, monto, saldoAnterior, saldoNuevo,
-                transferenciaId, SentidoTransferencia.SALIENTE, "Pago arriendo");
+                transferenciaId, SentidoTransferencia.SALIENTE, "Pago arriendo", UUID.randomUUID());
 
         // Assert
         assertThat(transaccion.getCuentaId()).isEqualTo(cuentaId);
@@ -131,5 +131,47 @@ class TransaccionTest {
         assertThat(transaccion.getTransferenciaId()).isEqualTo(transferenciaId);
         assertThat(transaccion.getSentido()).isEqualTo(SentidoTransferencia.SALIENTE);
         assertThat(transaccion.getDescripcion()).isEqualTo("Pago arriendo");
+    }
+
+    @Test
+    @DisplayName("Un deposito guarda el usuario que lo origino")
+    void depositoGuardaElUsuario() {
+        // Arrange
+        UUID usuarioId = UUID.randomUUID();
+
+        // Act
+        Transaccion transaccion = Transaccion.deposito(UUID.randomUUID(), BigDecimal.TEN, BigDecimal.ZERO,
+                BigDecimal.TEN, OrigenDeposito.EFECTIVO, usuarioId);
+
+        // Assert
+        assertThat(transaccion.getUsuarioId()).isEqualTo(usuarioId);
+    }
+
+    @Test
+    @DisplayName("Un retiro guarda el usuario que lo origino")
+    void retiroGuardaElUsuario() {
+        // Arrange
+        UUID usuarioId = UUID.randomUUID();
+
+        // Act
+        Transaccion transaccion = Transaccion.retiro(UUID.randomUUID(), BigDecimal.TEN, BigDecimal.TEN,
+                BigDecimal.ZERO, usuarioId);
+
+        // Assert
+        assertThat(transaccion.getUsuarioId()).isEqualTo(usuarioId);
+    }
+
+    @Test
+    @DisplayName("Una transferencia guarda el usuario que la origino")
+    void transferenciaGuardaElUsuario() {
+        // Arrange
+        UUID usuarioId = UUID.randomUUID();
+
+        // Act
+        Transaccion transaccion = Transaccion.transferencia(UUID.randomUUID(), BigDecimal.TEN, BigDecimal.TEN,
+                BigDecimal.ZERO, UUID.randomUUID(), SentidoTransferencia.ENTRANTE, null, usuarioId);
+
+        // Assert
+        assertThat(transaccion.getUsuarioId()).isEqualTo(usuarioId);
     }
 }

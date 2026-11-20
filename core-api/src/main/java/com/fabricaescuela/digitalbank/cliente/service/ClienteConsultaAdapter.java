@@ -35,6 +35,17 @@ public class ClienteConsultaAdapter implements IClienteConsulta {
 
     @Override
     @Transactional(readOnly = true)
+    public boolean existePorId(UUID clienteId) {
+        Long total = jdbcClient
+                .sql("SELECT count(*) FROM cliente WHERE id = :id")
+                .param("id", clienteId)
+                .query(Long.class)
+                .single();
+        return total > 0;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public boolean estaActivoPorId(UUID clienteId) {
         return jdbcClient
                 .sql("SELECT estado FROM cliente WHERE id = :id")

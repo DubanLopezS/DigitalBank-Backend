@@ -36,7 +36,8 @@ public class TransferenciaServiceImpl implements ITransferenciaService {
 
     @Override
     @Transactional
-    public TransferenciaResponse registrarTransferencia(UUID cuentaId, TransferenciaRequest request, UUID clienteId) {
+    public TransferenciaResponse registrarTransferencia(UUID cuentaId, TransferenciaRequest request, UUID clienteId,
+                                                        UUID usuarioId) {
         cuentaService.validarTitularidad(cuentaId, clienteId);
 
         UUID destinoId = cuentaService.buscarIdPorNumero(request.cuentaDestino())
@@ -60,7 +61,8 @@ public class TransferenciaServiceImpl implements ITransferenciaService {
                 salida.saldoNuevo(),
                 transferenciaId,
                 SentidoTransferencia.SALIENTE,
-                request.descripcion()
+                request.descripcion(),
+                usuarioId
         );
         Transaccion transaccionEntrada = Transaccion.transferencia(
                 entrada.cuentaId(),
@@ -69,7 +71,8 @@ public class TransferenciaServiceImpl implements ITransferenciaService {
                 entrada.saldoNuevo(),
                 transferenciaId,
                 SentidoTransferencia.ENTRANTE,
-                request.descripcion()
+                request.descripcion(),
+                usuarioId
         );
         Transaccion salidaGuardada = transaccionRepository.save(transaccionSalida);
         Transaccion entradaGuardada = transaccionRepository.save(transaccionEntrada);

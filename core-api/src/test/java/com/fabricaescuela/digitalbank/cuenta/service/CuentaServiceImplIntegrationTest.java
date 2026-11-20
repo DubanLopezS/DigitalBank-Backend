@@ -125,10 +125,11 @@ class CuentaServiceImplIntegrationTest {
     }
 
     @Test
-    @DisplayName("Una transferencia mueve los saldos y deja dos filas ligadas por el mismo transferenciaId")
+    @DisplayName("Una transferencia mueve los saldos y deja dos filas ligadas por el mismo transferenciaId y con el usuario")
     void transferenciaMueveLosSaldosYDejaDosFilasLigadas() {
         // Arrange
         UUID clienteId = UUID.randomUUID();
+        UUID usuarioId = UUID.randomUUID();
         UUID origenId = cuentaRepository
                 .save(new Cuenta(clienteId, "2000000003", TipoCuenta.AHORROS, new BigDecimal("100.00")))
                 .getId();
@@ -138,7 +139,7 @@ class CuentaServiceImplIntegrationTest {
         TransferenciaRequest request = new TransferenciaRequest("2000000004", new BigDecimal("30.00"), "Pago arriendo");
 
         // Act
-        TransferenciaResponse respuesta = transferenciaService.registrarTransferencia(origenId, request, clienteId);
+        TransferenciaResponse respuesta = transferenciaService.registrarTransferencia(origenId, request, clienteId, usuarioId);
 
         // Assert
         assertThat(cuentaRepository.findById(origenId).orElseThrow().getSaldoContable())
@@ -150,10 +151,10 @@ class CuentaServiceImplIntegrationTest {
                 .filter(fila -> respuesta.transferenciaId().equals(fila.getTransferenciaId()))
                 .toList();
         assertThat(filas)
-                .extracting(Transaccion::getCuentaId, Transaccion::getSentido)
+                .extracting(Transaccion::getCuentaId, Transaccion::getSentido, Transaccion::getUsuarioId)
                 .containsExactlyInAnyOrder(
-                        tuple(origenId, SentidoTransferencia.SALIENTE),
-                        tuple(destinoId, SentidoTransferencia.ENTRANTE));
+                        tuple(origenId, SentidoTransferencia.SALIENTE, usuarioId),
+                        tuple(destinoId, SentidoTransferencia.ENTRANTE, usuarioId));
         assertThat(filas)
                 .filteredOn(fila -> fila.getSentido() == SentidoTransferencia.SALIENTE)
                 .extracting(Transaccion::getId)

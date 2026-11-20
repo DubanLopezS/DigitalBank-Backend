@@ -6,5 +6,6 @@ import com.fabricaescuela.digitalbank.transaccion.dto.TransferenciaResponse;
 import java.util.UUID;
 
 public interface ITransferenciaService {
-    TransferenciaResponse registrarTransferencia(UUID cuentaId, TransferenciaRequest request, UUID clienteId);
+    TransferenciaResponse registrarTransferencia(UUID cuentaId, TransferenciaRequest request, UUID clienteId,
+                                                 UUID usuarioId);
 }

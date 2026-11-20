@@ -6,5 +6,5 @@ import com.fabricaescuela.digitalbank.transaccion.dto.TransaccionResponse;
 import java.util.UUID;
 
 public interface IRetiroService {
-    TransaccionResponse registrarRetiro(UUID cuentaId, RetiroRequest request, UUID clienteId);
+    TransaccionResponse registrarRetiro(UUID cuentaId, RetiroRequest request, UUID clienteId, UUID usuarioId);
 }

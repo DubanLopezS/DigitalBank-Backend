@@ -50,6 +50,7 @@ class ReversoServiceImplTest {
     private static final UUID ORIGEN_ID = UUID.randomUUID();
     private static final UUID DESTINO_ID = UUID.randomUUID();
     private static final UUID USUARIO_ID = UUID.randomUUID();
+    private static final UUID ORIGINADOR_ID = UUID.randomUUID();
     private static final UUID TRANSFERENCIA_ID = UUID.randomUUID();
     private static final BigDecimal MONTO = new BigDecimal("30000.00");
     private static final String MOTIVO = "Movimiento duplicado por error del cajero";
@@ -260,21 +261,21 @@ class ReversoServiceImplTest {
 
     private Transaccion deposito(UUID id) {
         Transaccion t = Transaccion.deposito(CUENTA_ID, MONTO, new BigDecimal("70000.00"),
-                new BigDecimal("100000.00"), OrigenDeposito.EFECTIVO);
+                new BigDecimal("100000.00"), OrigenDeposito.EFECTIVO, ORIGINADOR_ID);
         ReflectionTestUtils.setField(t, "id", id);
         return t;
     }
 
     private Transaccion retiro(UUID id) {
         Transaccion t = Transaccion.retiro(CUENTA_ID, MONTO, new BigDecimal("40000.00"),
-                new BigDecimal("10000.00"));
+                new BigDecimal("10000.00"), ORIGINADOR_ID);
         ReflectionTestUtils.setField(t, "id", id);
         return t;
     }
 
     private Transaccion transferenciaLeg(UUID id, UUID cuentaId, SentidoTransferencia sentido) {
         Transaccion t = Transaccion.transferencia(cuentaId, MONTO, new BigDecimal("100000.00"),
-                new BigDecimal("70000.00"), TRANSFERENCIA_ID, sentido, "Pago arriendo");
+                new BigDecimal("70000.00"), TRANSFERENCIA_ID, sentido, "Pago arriendo", ORIGINADOR_ID);
         ReflectionTestUtils.setField(t, "id", id);
         return t;
     }

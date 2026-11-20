@@ -10,5 +10,7 @@ public interface IClienteConsulta {
 
     Optional<ClienteResumenResponse> obtenerResumenPorDocumento(TipoDocumento tipoDocumento, String numeroDocumento);
 
+    boolean existePorId(UUID clienteId);
+
     boolean estaActivoPorId(UUID clienteId);
 }

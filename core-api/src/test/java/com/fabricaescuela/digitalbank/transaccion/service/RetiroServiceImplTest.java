@@ -39,6 +39,7 @@ class RetiroServiceImplTest {
 
     private static final UUID CUENTA_ID = UUID.randomUUID();
     private static final UUID CLIENTE_ID = UUID.randomUUID();
+    private static final UUID USUARIO_ID = UUID.randomUUID();
 
     @Mock
     private ICuentaService cuentaService;
@@ -59,7 +60,7 @@ class RetiroServiceImplTest {
         prepararDebito(new BigDecimal("30000.00"), new BigDecimal("100000.00"), new BigDecimal("70000.00"));
 
         // Act
-        retiroService.registrarRetiro(CUENTA_ID, new RetiroRequest(new BigDecimal("30000.00")), CLIENTE_ID);
+        retiroService.registrarRetiro(CUENTA_ID, new RetiroRequest(new BigDecimal("30000.00")), CLIENTE_ID, USUARIO_ID);
 
         // Assert
         InOrder orden = inOrder(cuentaService);
@@ -74,7 +75,7 @@ class RetiroServiceImplTest {
         prepararDebito(new BigDecimal("30000.00"), new BigDecimal("100000.00"), new BigDecimal("70000.00"));
 
         // Act
-        retiroService.registrarRetiro(CUENTA_ID, new RetiroRequest(new BigDecimal("30000.00")), CLIENTE_ID);
+        retiroService.registrarRetiro(CUENTA_ID, new RetiroRequest(new BigDecimal("30000.00")), CLIENTE_ID, USUARIO_ID);
 
         // Assert
         verify(transaccionRepository).save(transaccionCaptor.capture());
@@ -87,6 +88,20 @@ class RetiroServiceImplTest {
     }
 
     @Test
+    @DisplayName("La transaccion del retiro guarda el usuario que lo hizo")
+    void laTransaccionGuardaElUsuario() {
+        // Arrange
+        prepararDebito(new BigDecimal("30000.00"), new BigDecimal("100000.00"), new BigDecimal("70000.00"));
+
+        // Act
+        retiroService.registrarRetiro(CUENTA_ID, new RetiroRequest(new BigDecimal("30000.00")), CLIENTE_ID, USUARIO_ID);
+
+        // Assert
+        verify(transaccionRepository).save(transaccionCaptor.capture());
+        assertThat(transaccionCaptor.getValue().getUsuarioId()).isEqualTo(USUARIO_ID);
+    }
+
+    @Test
     @DisplayName("La respuesta expone la transaccion COMPLETADA de tipo RETIRO")
     void laRespuestaExponeLaTransaccionCompletada() {
         // Arrange
@@ -94,7 +109,7 @@ class RetiroServiceImplTest {
 
         // Act
         TransaccionResponse response = retiroService.registrarRetiro(
-                CUENTA_ID, new RetiroRequest(new BigDecimal("100000.00")), CLIENTE_ID);
+                CUENTA_ID, new RetiroRequest(new BigDecimal("100000.00")), CLIENTE_ID, USUARIO_ID);
 
         // Assert
         assertThat(response.cuentaId()).isEqualTo(CUENTA_ID);
@@ -116,7 +131,7 @@ class RetiroServiceImplTest {
 
         // Act & Assert
         assertThatThrownBy(() -> retiroService.registrarRetiro(
-                CUENTA_ID, new RetiroRequest(new BigDecimal("30000.00")), CLIENTE_ID))
+                CUENTA_ID, new RetiroRequest(new BigDecimal("30000.00")), CLIENTE_ID, USUARIO_ID))
                 .isSameAs(excepcion);
 
         verify(cuentaService, never()).debitar(any(UUID.class), any(BigDecimal.class));
@@ -132,7 +147,7 @@ class RetiroServiceImplTest {
 
         // Act & Assert
         assertThatThrownBy(() -> retiroService.registrarRetiro(
-                CUENTA_ID, new RetiroRequest(new BigDecimal("30000.00")), CLIENTE_ID))
+                CUENTA_ID, new RetiroRequest(new BigDecimal("30000.00")), CLIENTE_ID, USUARIO_ID))
                 .isSameAs(excepcion);
 
         verifyNoInteractions(transaccionRepository);
@@ -147,7 +162,7 @@ class RetiroServiceImplTest {
 
         // Act & Assert
         assertThatThrownBy(() -> retiroService.registrarRetiro(
-                CUENTA_ID, new RetiroRequest(new BigDecimal("30000.00")), CLIENTE_ID))
+                CUENTA_ID, new RetiroRequest(new BigDecimal("30000.00")), CLIENTE_ID, USUARIO_ID))
                 .isSameAs(excepcion);
 
         verifyNoInteractions(transaccionRepository);
