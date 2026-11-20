@@ -15,6 +15,8 @@ public interface ICuentaService {
 
     MovimientoSaldoResponse debitar(UUID cuentaId, BigDecimal monto);
 
+    MovimientoSaldoResponse aplicarReverso(UUID cuentaId, BigDecimal monto, boolean credito);
+
     void validarTitularidad(UUID cuentaId, UUID clienteId);
 
     UUID obtenerIdPorNumero(String numeroCuenta);
