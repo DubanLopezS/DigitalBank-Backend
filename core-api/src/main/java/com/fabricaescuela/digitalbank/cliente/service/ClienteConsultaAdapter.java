@@ -43,4 +43,15 @@ public class ClienteConsultaAdapter implements IClienteConsulta {
                 .single();
         return total > 0;
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean estaActivoPorId(UUID clienteId) {
+        return jdbcClient
+                .sql("SELECT estado FROM cliente WHERE id = :id")
+                .param("id", clienteId)
+                .query((rs, rowNum) -> "ACTIVO".equals(rs.getString("estado")))
+                .optional()
+                .orElse(false);
+    }
 }

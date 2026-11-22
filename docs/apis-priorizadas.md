@@ -24,6 +24,7 @@ Endpoints sacados de los controllers de `main`. El rol sale de `@PreAuthorize` c
 | `POST /api/v1/cuentas/{cuentaId}/desbloquear` | HU-07a Bloqueo de cuenta | 2 | ADMIN (`@PreAuthorize`) | media | Es la única forma de devolver a ACTIVA una cuenta bloqueada. |
 | `POST /api/v1/cuentas/{cuentaId}/cerrar` | HU-07b Cierre de cuenta | 2 | ADMIN (`@PreAuthorize`) | media | No mueve dinero (exige saldo $0) y no tiene vuelta atrás desde la API. |
 | `GET /api/v1/clientes/{clienteId}/cuentas` | HU-08 Listado de cuentas por cliente | 3 | CLIENTE (solo las suyas), ADMIN y CAJERO (cualquiera) con `@PreAuthorize`; lo decide `ListadoCuentasServiceImpl` (ADR-0005) | baja | Es de solo lectura y, si falla, no afecta saldos ni bloquea otra HU. |
+| `POST /api/v1/transacciones/{transaccionId}/reversos` | HU-12 Reversión de transacción | 3 | ADMIN (`@PreAuthorize`) | alta | Mueve dinero en una o dos cuentas y cambia el estado de la transacción original a REVERSADA, sin vuelta atrás. Una transacción solo se puede reversar una vez. |
 
 ## reportes-api
 
