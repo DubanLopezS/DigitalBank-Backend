@@ -41,7 +41,7 @@ class ClienteCuentasControllerTest {
     void clienteRecibe200() {
         // Arrange
         List<CuentaResumenResponse> esperada = List.of(new CuentaResumenResponse(
-                "1234567890", TipoCuenta.AHORROS, new BigDecimal("50.00"), EstadoCuenta.ACTIVA));
+                UUID.randomUUID(), "1234567890", TipoCuenta.AHORROS, new BigDecimal("50.00"), EstadoCuenta.ACTIVA));
         when(listadoCuentasService.listar(CLIENTE_ID, "ACTIVA", CLIENTE_ID, "CLIENTE")).thenReturn(esperada);
 
         // Act
