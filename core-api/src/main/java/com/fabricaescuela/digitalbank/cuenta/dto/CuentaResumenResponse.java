@@ -5,8 +5,10 @@ import com.fabricaescuela.digitalbank.cuenta.entity.EstadoCuenta;
 import com.fabricaescuela.digitalbank.cuenta.entity.TipoCuenta;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 public record CuentaResumenResponse(
+        UUID id,
         String numeroCuenta,
         TipoCuenta tipoCuenta,
         BigDecimal saldoDisponible,
@@ -15,6 +17,7 @@ public record CuentaResumenResponse(
 
     public static CuentaResumenResponse from(Cuenta cuenta) {
         return new CuentaResumenResponse(
+                cuenta.getId(),
                 cuenta.getNumeroCuenta(),
                 cuenta.getTipoCuenta(),
                 cuenta.getSaldoDisponible(),
