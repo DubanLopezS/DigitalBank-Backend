@@ -1,0 +1,5 @@
+# Todo lo de Digital Bank en Kubernetes local queda en este namespace.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: digitalbank

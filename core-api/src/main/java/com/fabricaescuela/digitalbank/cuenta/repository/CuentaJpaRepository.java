@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,4 +27,8 @@ public interface CuentaJpaRepository extends JpaRepository<Cuenta, UUID>, ICuent
     @Query("select case when count(c) > 0 then true else false end from Cuenta c "
             + "where c.id = :cuentaId and c.clienteId = :clienteId")
     boolean existeCuentaDelCliente(@Param("cuentaId") UUID cuentaId, @Param("clienteId") UUID clienteId);
+
+    @Override
+    @Query("select c.id from Cuenta c where c.clienteId = :clienteId")
+    List<UUID> findIdsByClienteId(@Param("clienteId") UUID clienteId);
 }

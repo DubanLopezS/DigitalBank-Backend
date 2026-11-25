@@ -1,0 +1,122 @@
+# Digital Bank - entorno local con Docker Compose
+#
+# Levanta todo junto: PostgreSQL, las tres APIs, Prometheus y Grafana.
+#   docker compose up -d --build
+#
+# Puertos en tu máquina:
+#   auth-api      http://localhost:8081   (Swagger en /swagger-ui.html)
+#   core-api      http://localhost:8082
+#   reportes-api  http://localhost:8083
+#   Prometheus    http://localhost:9090
+#   Grafana       http://localhost:3000   (admin / admin)
+#   PostgreSQL    localhost:5433          (digitalbank / digitalbank)
+#
+# Es solo para desarrollo y la demo: las claves de aquí no son las de Render ni las de Supabase.
+# La guía completa está en docs/despliegue-local.md.
+
+name: digitalbank
+
+x-api-env: &api-env
+  # Base local sin SSL (en Render la URL lleva sslmode=require)
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/digitalbank
+  DB_USERNAME: digitalbank
+  DB_PASSWORD: digitalbank
+  JWT_SECRET: ${JWT_SECRET:-clave-local-de-demo-digital-bank-minimo-32-bytes}
+  METRICS_EXPOSURE: health,info,prometheus
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: digitalbank-postgres
+    environment:
+      POSTGRES_DB: digitalbank
+      POSTGRES_USER: digitalbank
+      POSTGRES_PASSWORD: digitalbank
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./local:/scripts:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U digitalbank -d digitalbank"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # core-api va primero: es la dueña del esquema y corre las migraciones de Flyway.
+  core-api:
+    image: digitalbank/core-api:1.0
+    build:
+      context: .
+      dockerfile: core-api/Dockerfile
+    container_name: digitalbank-core-api
+    environment: *api-env
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
+  # auth-api y reportes-api validan tablas que crea core-api: si arrancan antes de
+  # que termine Flyway fallan, y Docker las reinicia hasta que las tablas existan.
+  auth-api:
+    image: digitalbank/auth-api:1.0
+    build:
+      context: .
+      dockerfile: auth-api/Dockerfile
+    container_name: digitalbank-auth-api
+    environment: *api-env
+    ports:
+      - "8081:8081"
+    depends_on:
+      - core-api
+    restart: on-failure
+
+  reportes-api:
+    image: digitalbank/reportes-api:1.0
+    build:
+      context: .
+      dockerfile: reportes-api/Dockerfile
+    container_name: digitalbank-reportes-api
+    environment: *api-env
+    ports:
+      - "8083:8083"
+    depends_on:
+      - core-api
+    restart: on-failure
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: digitalbank-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoreo/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - core-api
+      - auth-api
+      - reportes-api
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: digitalbank-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./monitoreo/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoreo/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
