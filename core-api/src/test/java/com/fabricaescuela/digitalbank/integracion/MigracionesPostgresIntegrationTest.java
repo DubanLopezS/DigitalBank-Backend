@@ -8,8 +8,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import javax.sql.DataSource;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,8 +35,14 @@ class MigracionesPostgresIntegrationTest extends IntegracionPostgresBase {
     }
 
     @Test
-    @DisplayName("Flyway aplica todas las migraciones sobre una base vacía y ninguna queda fallida")
-    void aplicaTodasLasMigraciones() {
+    @DisplayName("Flyway aplica sobre una base vacía todas las migraciones del repositorio y ninguna queda fallida")
+    void aplicaTodasLasMigraciones() throws Exception {
+        // Se compara contra los archivos que hay en db/migration, así una migración nueva queda cubierta sola.
+        List<String> enElRepositorio = Arrays.stream(new PathMatchingResourcePatternResolver()
+                        .getResources("classpath:db/migration/V*__*.sql"))
+                .map(recurso -> recurso.getFilename().substring(1, recurso.getFilename().indexOf("__")))
+                .sorted(Comparator.comparingInt(Integer::parseInt))
+                .toList();
         List<String> aplicadas = jdbc.sql("""
                         SELECT version FROM flyway_schema_history
                         WHERE success AND version IS NOT NULL
@@ -45,7 +54,8 @@ class MigracionesPostgresIntegrationTest extends IntegracionPostgresBase {
                 .query(Integer.class)
                 .single();
 
-        assertThat(aplicadas).startsWith("1", "2", "3", "4", "5", "6");
+        assertThat(enElRepositorio).startsWith("1", "2", "3", "4", "5", "6");
+        assertThat(aplicadas).isEqualTo(enElRepositorio);
         assertThat(fallidas).isZero();
     }
 
