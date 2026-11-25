@@ -4,10 +4,13 @@ import com.fabricaescuela.digitalbank.auth.dto.LoginRequest;
 import com.fabricaescuela.digitalbank.auth.dto.LoginResponse;
 import com.fabricaescuela.digitalbank.auth.entity.EstadoSeguridad;
 import com.fabricaescuela.digitalbank.auth.entity.Usuario;
+import com.fabricaescuela.digitalbank.auth.exception.ClienteNoHabilitadoException;
 import com.fabricaescuela.digitalbank.auth.exception.CredencialesInvalidasException;
 import com.fabricaescuela.digitalbank.auth.exception.CuentaBloqueadaException;
 import com.fabricaescuela.digitalbank.auth.interfaces.repositories.IUsuarioRepository;
 import com.fabricaescuela.digitalbank.auth.interfaces.services.IAuthService;
+import com.fabricaescuela.digitalbank.cliente.entity.EstadoCliente;
+import com.fabricaescuela.digitalbank.cliente.interfaces.repositories.IClienteRepository;
 import com.fabricaescuela.digitalbank.core.security.IJwtService;
 import com.fabricaescuela.digitalbank.core.util.NormalizadorCorreo;
 
@@ -25,12 +28,14 @@ public class AuthServiceImpl implements IAuthService {
     private final IUsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final IJwtService jwtService;
+    private final IClienteRepository clienteRepository;
 
-    public AuthServiceImpl(IUsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder, 
-                            IJwtService jwtService) {
+    public AuthServiceImpl(IUsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder,
+                            IJwtService jwtService, IClienteRepository clienteRepository) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.clienteRepository = clienteRepository;
     }
 
 
@@ -64,6 +69,13 @@ public class AuthServiceImpl implements IAuthService {
             throw new CredencialesInvalidasException();
         }
 
+        // HU-04: se revisa después de la contraseña, para no revelar el estado del cliente
+        // a quien no la conoce. ADMIN y CAJERO no tienen cliente.
+        if (esClienteInactivo(usuario)) {
+            log.warn("evento=LOGIN_RECHAZADO_CLIENTE_INACTIVO usuarioId={}", usuario.getId());
+            throw new ClienteNoHabilitadoException();
+        }
+
         usuario.registrarLoginExitoso();
         usuarioRepository.save(usuario);
 
@@ -71,5 +83,14 @@ public class AuthServiceImpl implements IAuthService {
         LoginResponse response = LoginResponse.of(token, jwtService.getExpirationMinutes());
         log.info("evento=LOGIN_EXITOSO usuarioId={} rol={}", usuario.getId(), usuario.getRol());
         return response;
+    }
+
+    private boolean esClienteInactivo(Usuario usuario) {
+        if (usuario.getClienteId() == null) {
+            return false;
+        }
+        return clienteRepository.findById(usuario.getClienteId())
+                .map(cliente -> cliente.getEstado() == EstadoCliente.INACTIVO)
+                .orElse(false);
     }
 }

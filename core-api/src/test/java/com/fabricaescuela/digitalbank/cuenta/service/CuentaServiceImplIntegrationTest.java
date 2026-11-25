@@ -1,5 +1,6 @@
 package com.fabricaescuela.digitalbank.cuenta.service;
 
+import com.fabricaescuela.digitalbank.cliente.interfaces.services.IClienteEstado;
 import com.fabricaescuela.digitalbank.core.exception.AccesoNoAutorizadoException;
 import com.fabricaescuela.digitalbank.cuenta.entity.Cuenta;
 import com.fabricaescuela.digitalbank.cuenta.entity.TipoCuenta;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -44,6 +46,11 @@ class CuentaServiceImplIntegrationTest {
 
     @Autowired
     private TransaccionJpaRepository transaccionJpaRepository;
+
+    // La tabla cliente es de auth-api y no existe en el H2 de core-api: el estado del
+    // cliente se simula como ACTIVO (el mock devuelve false en estaInactivo).
+    @MockitoBean
+    private IClienteEstado clienteEstado;
 
     @Test
     @DisplayName("Despues de validar la titularidad el bloqueo lee el saldo actual de la base de datos")

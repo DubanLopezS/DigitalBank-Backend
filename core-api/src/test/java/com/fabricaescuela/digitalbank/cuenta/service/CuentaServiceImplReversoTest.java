@@ -108,8 +108,8 @@ class CuentaServiceImplReversoTest {
     }
 
     @Test
-    @DisplayName("Reverso con el cliente de la cuenta inactivo responde 403 CLIENTE_NO_HABILITADO")
-    void reversoClienteInactivoResponde403() {
+    @DisplayName("Reverso con el cliente de la cuenta inactivo responde 409 CLIENTE_NO_HABILITADO")
+    void reversoClienteInactivoResponde409() {
         Cuenta cuenta = cuentaConSaldo(new BigDecimal("100000.00"));
         when(cuentaRepository.findByIdForUpdate(CUENTA_ID)).thenReturn(Optional.of(cuenta));
         when(clienteService.estaActivoPorId(CLIENTE_ID)).thenReturn(false);
@@ -119,7 +119,7 @@ class CuentaServiceImplReversoTest {
 
         assertEquals("CLIENTE_NO_HABILITADO", ex.getErrorCode());
         assertEquals("Cliente no habilitado", ex.getMessage());
-        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        assertEquals(HttpStatus.CONFLICT, ex.getStatus());
         verify(cuentaRepository, never()).save(any());
     }
 
