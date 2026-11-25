@@ -1,0 +1,67 @@
+# reportes-api: historial y detalle de transacciones (solo lectura).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reportes-api
+  namespace: digitalbank
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reportes-api
+  template:
+    metadata:
+      labels:
+        app: reportes-api
+    spec:
+      containers:
+        - name: reportes-api
+          image: digitalbank/reportes-api:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8083
+          envFrom:
+            - secretRef:
+                name: digitalbank-secretos
+            - configMapRef:
+                name: digitalbank-config
+          resources:
+            requests:
+              memory: "384Mi"
+              cpu: "250m"
+            limits:
+              memory: "768Mi"
+              cpu: "1000m"
+          # Spring tarda en arrancar: hasta 5 minutos antes de darlo por fallido.
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8083
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8083
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8083
+            periodSeconds: 5
+---
+# NodePort: la API queda en http://localhost:30083 y el Service reparte las
+# peticiones entre todas las réplicas (pods) del Deployment.
+apiVersion: v1
+kind: Service
+metadata:
+  name: reportes-api
+  namespace: digitalbank
+spec:
+  type: NodePort
+  selector:
+    app: reportes-api
+  ports:
+    - port: 8083
+      targetPort: 8083
+      nodePort: 30083

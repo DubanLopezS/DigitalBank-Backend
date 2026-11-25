@@ -1,0 +1,39 @@
+# Prometheus lee las métricas de las tres APIs cada 15 segundos.
+# Los nombres (core-api, auth-api, reportes-api) son los servicios de docker-compose.yml.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: core-api
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['core-api:8082']
+
+  - job_name: auth-api
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['auth-api:8081']
+
+  - job_name: reportes-api
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['reportes-api:8083']
+
+  # Las mismas APIs desplegadas en Kubernetes local (carpeta k8s/). Quedan en el host
+  # por NodePort, y desde el contenedor de Prometheus se llega con host.docker.internal.
+  # Si Kubernetes no está corriendo, estos tres aparecen DOWN en Prometheus; es normal.
+  - job_name: core-api-k8s
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:30082']
+
+  - job_name: auth-api-k8s
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:30081']
+
+  - job_name: reportes-api-k8s
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:30083']

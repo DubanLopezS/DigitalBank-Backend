@@ -113,6 +113,10 @@ La prioridad y la razón de cada endpoint están en [docs/apis-priorizadas.md](d
 | `GET /api/v1/reportes/transacciones/{transaccionId}` | HU-14 Detalle de una transacción | Muestra una transacción con sus cuentas origen y destino; el usuario que la originó solo aparece si consulta un ADMIN | CLIENTE, ADMIN | `200` ok · `400` id inválido · `401` sin token o token inválido · `403` cliente sin acceso, o CAJERO · `404` transacción no encontrada (solo ADMIN) |
 
 
+## Despliegue local, Kubernetes y monitoreo
+
+El proyecto completo (PostgreSQL, las tres APIs, Prometheus y Grafana) se levanta en local con `docker compose up -d --build`, y las APIs también se pueden desplegar en el Kubernetes de Docker Desktop con los manifiestos de `k8s/`. Los pasos, los usuarios de la demo y los tableros están en [docs/despliegue-local.md](docs/despliegue-local.md).
+
 ## Swagger y despliegue
 
 Las tres APIs usan springdoc y dejan la documentación sin token. En local, la interfaz está en `/swagger-ui.html` y el JSON de OpenAPI en `/v3/api-docs`. Desplegadas en Render:

@@ -1,0 +1,23 @@
+# Valores comunes a las tres APIs. Son los de la demo local, no los de Render ni Supabase.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: digitalbank-secretos
+  namespace: digitalbank
+type: Opaque
+stringData:
+  POSTGRES_DB: digitalbank
+  POSTGRES_USER: digitalbank
+  POSTGRES_PASSWORD: digitalbank
+  DB_USERNAME: digitalbank
+  DB_PASSWORD: digitalbank
+  JWT_SECRET: clave-local-de-demo-digital-bank-minimo-32-bytes
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: digitalbank-config
+  namespace: digitalbank
+data:
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/digitalbank
+  METRICS_EXPOSURE: health,info,prometheus
