@@ -11,6 +11,7 @@ import com.fabricaescuela.digitalbank.transaccion.entity.Transaccion;
 import com.fabricaescuela.digitalbank.transaccion.exception.TransaccionNoEncontradaException;
 import com.fabricaescuela.digitalbank.transaccion.exception.TransaccionNoReversableException;
 import com.fabricaescuela.digitalbank.transaccion.interfaces.repositories.ITransaccionRepository;
+import com.fabricaescuela.digitalbank.transaccion.interfaces.repositories.ResumenTransaccion;
 import com.fabricaescuela.digitalbank.transaccion.interfaces.services.IReversoService;
 
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,14 +39,17 @@ public class ReversoServiceImpl implements IReversoService {
     @Override
     @Transactional
     public ReversoResponse reversar(UUID transaccionId, ReversoRequest request, UUID usuarioId) {
-        // Lectura sin bloqueo solo para decidir el tipo; el estado se revalida bajo bloqueo en cada rama.
-        Transaccion original = transaccionRepository.findById(transaccionId)
+        // Solo se consulta el tipo, sin cargar la entidad. Si se cargara aquí, el SELECT ... FOR UPDATE de
+        // cada rama devolvería esta copia sin refrescarla y no vería un reverso que otra petición confirmó
+        // en medio: seguiría adelante y chocaría con uk_transaccion_relacionada (500 en vez de 409).
+        ResumenTransaccion resumen = transaccionRepository.buscarResumen(transaccionId)
                 .orElseThrow(TransaccionNoEncontradaException::new);
 
-        return switch (original.getTipo()) {
+        return switch (resumen.tipo()) {
             case DEPOSITO -> reversarUnaCuenta(transaccionId, usuarioId, request.motivo(), false);
             case RETIRO -> reversarUnaCuenta(transaccionId, usuarioId, request.motivo(), true);
-            case TRANSFERENCIA -> reversarTransferencia(original, usuarioId, request.motivo());
+            case TRANSFERENCIA -> reversarTransferencia(
+                    transaccionId, resumen.transferenciaId(), usuarioId, request.motivo());
             // Un reverso no se puede reversar.
             default -> throw new TransaccionNoReversableException();
         };
@@ -83,9 +88,9 @@ public class ReversoServiceImpl implements IReversoService {
     }
 
     // Transferencia: se devuelve el dinero al origen y se descuenta del destino. Son sus dos piernas.
-    private ReversoResponse reversarTransferencia(Transaccion original, UUID usuarioId, String motivo) {
-        List<Transaccion> piernas = transaccionRepository
-                .findByTransferenciaIdForUpdate(original.getTransferenciaId());
+    private ReversoResponse reversarTransferencia(UUID transaccionId, UUID transferenciaId,
+                                                  UUID usuarioId, String motivo) {
+        List<Transaccion> piernas = transaccionRepository.findByTransferenciaIdForUpdate(transferenciaId);
 
         Transaccion salida = buscarPierna(piernas, SentidoTransferencia.SALIENTE);
         Transaccion entrada = buscarPierna(piernas, SentidoTransferencia.ENTRANTE);
@@ -96,22 +101,21 @@ public class ReversoServiceImpl implements IReversoService {
 
         UUID cuentaOrigenId = salida.getCuentaId();
         UUID cuentaDestinoId = entrada.getCuentaId();
+        BigDecimal monto = salida.getMonto();
 
         cuentaService.bloquearEnOrden(cuentaOrigenId, cuentaDestinoId);
 
-        MovimientoSaldoResponse movimientoOrigen = cuentaService.aplicarReverso(cuentaOrigenId, original.getMonto(), true);
-        MovimientoSaldoResponse movimientoDestino = cuentaService.aplicarReverso(cuentaDestinoId, original.getMonto(), false);
+        MovimientoSaldoResponse movimientoOrigen = cuentaService.aplicarReverso(cuentaOrigenId, monto, true);
+        MovimientoSaldoResponse movimientoDestino = cuentaService.aplicarReverso(cuentaDestinoId, monto, false);
 
         // El reverso conserva el transferencia_id de la transferencia original para quedar ligado a ella;
         // tipo=REVERSO distingue las dos filas del reverso de las dos de la transferencia.
-        UUID transferenciaId = original.getTransferenciaId();
-
         Transaccion reversoOrigen = Transaccion.reverso(
-                cuentaOrigenId, original.getMonto(),
+                cuentaOrigenId, monto,
                 movimientoOrigen.saldoAnterior(), movimientoOrigen.saldoNuevo(),
                 SentidoTransferencia.ENTRANTE, transferenciaId, salida.getId(), usuarioId, motivo);
         Transaccion reversoDestino = Transaccion.reverso(
-                cuentaDestinoId, original.getMonto(),
+                cuentaDestinoId, monto,
                 movimientoDestino.saldoAnterior(), movimientoDestino.saldoNuevo(),
                 SentidoTransferencia.SALIENTE, transferenciaId, entrada.getId(), usuarioId, motivo);
 
@@ -125,12 +129,12 @@ public class ReversoServiceImpl implements IReversoService {
 
         log.info("evento=REVERSO_REGISTRADO tipoOriginal=TRANSFERENCIA transaccionOriginalId={} transferenciaId={} "
                         + "reversoOrigenId={} reversoDestinoId={} usuarioId={} monto={}",
-                original.getId(), original.getTransferenciaId(), reversoOrigenGuardado.getId(),
-                reversoDestinoGuardado.getId(), usuarioId, original.getMonto());
+                transaccionId, transferenciaId, reversoOrigenGuardado.getId(),
+                reversoDestinoGuardado.getId(), usuarioId, monto);
 
         return new ReversoResponse(
-                original.getId(), original.getTipo().name(), "REVERSADA",
-                original.getMonto(), motivo, usuarioId, reversoOrigenGuardado.getFechaHora(),
+                transaccionId, TipoTransaccion.TRANSFERENCIA.name(), "REVERSADA",
+                monto, motivo, usuarioId, reversoOrigenGuardado.getFechaHora(),
                 List.of(MovimientoReverso.from(reversoOrigenGuardado), MovimientoReverso.from(reversoDestinoGuardado)));
     }
 

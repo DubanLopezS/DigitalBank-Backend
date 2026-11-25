@@ -10,7 +10,7 @@ public interface ITransaccionRepository {
 
     Transaccion save(Transaccion transaccion);
 
-    Optional<Transaccion> findById(UUID id);
+    Optional<ResumenTransaccion> buscarResumen(UUID id);
 
     Optional<Transaccion> findByIdForUpdate(UUID id);
 
