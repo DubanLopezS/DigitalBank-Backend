@@ -6,11 +6,13 @@
 
 **Nota:** este ADR se escribió el 25 de octubre de 2026, con la decisión ya tomada.
 
+**Actualización:** el 26 de noviembre de 2026 se quitó el claim email del token, porque ninguna API lo usaba y quedaba legible para cualquiera que tuviera el token, y se corrigió qué operaciones revisan el estado del cliente después de la HU-04.
+
 ## Contexto
 
 El login (HU-18) devuelve un JWT y todas las demás operaciones lo piden en el header `Authorization`. El login con el JWT firmado con HMAC lo hicimos en el Sprint 1 (15 de septiembre de 2026), cuando había un solo proceso, y no había quedado en un ADR. Con la separación en tres APIs (ADR-0009, 8 de octubre de 2026) el token lo sigue creando `auth-api`, y `core-api` pasó a validarlo con el mismo secreto, sin llamar a `auth-api`. `reportes-api` se sumó después, con la HU-13. Así que las tres necesitan una clave para verificar la firma.
 
-Hoy el token lo arma `JwtServiceImpl` de `auth-api`: el `subject` es el id del usuario, lleva los claims `email` y `rol`, y `clienteId` solo cuando el usuario es un cliente. Vence a los 60 minutos (`security.jwt.expiration-minutes=60` en `auth-api/src/main/resources/application.properties`).
+Hoy el token lo arma `JwtServiceImpl` de `auth-api`: el `subject` es el id del usuario, lleva el claim `rol`, y `clienteId` solo cuando el usuario es un cliente. Vence a los 60 minutos (`security.jwt.expiration-minutes=60` en `auth-api/src/main/resources/application.properties`).
 
 ## Alternativas que consideramos
 
@@ -31,6 +33,6 @@ La interfaz de `core-api` y `reportes-api` no tiene `generarToken`, así que en 
 **En contra:**
 
 - Cualquier API que tenga el secreto puede firmar tokens válidos con cualquier rol. Que `core-api` y `reportes-api` no tengan `generarToken` depende solo de cómo escribimos el código; con el secreto podrían firmar igual. Si alguien consigue el `JWT_SECRET` de cualquiera de los tres servicios, puede hacerse pasar por ADMIN en todo el sistema.
-- Un token no se puede revocar antes de que venza. Hasta que vence, un usuario bloqueado o un cliente que pase a INACTIVO sigue entrando, y si a alguien le cambian el rol en la base, el token sigue diciendo el rol viejo. Lo mitiga en parte que las operaciones leen el estado de la cuenta en la base, pero `RetiroServiceImpl` y `TransferenciaServiceImpl` no revisan el estado del cliente.
+- Un token no se puede revocar antes de que venza. Hasta que vence, un usuario bloqueado o un cliente que pase a INACTIVO sigue entrando, y si a alguien le cambian el rol en la base, el token sigue diciendo el rol viejo. Lo mitiga en parte que `core-api` lee en la base el estado de la cuenta y, desde la HU-04, el del cliente antes de abrir cuentas y de cada operación que mueve dinero, así que un cliente INACTIVO con un token vigente recibe 409 `CLIENTE_NO_HABILITADO`. Con ese token todavía puede hacer las consultas que no revisan el estado, como el saldo y el listado de cuentas en `core-api`, la consulta del cliente por documento en `auth-api`, y el historial de movimientos y el detalle de transacción en `reportes-api`; eso va con la HU-04, que pide que el historial del cliente siga disponible.
 - Cambiar el secreto invalida todos los tokens a la vez, y hay que cambiarlo en los tres servicios al mismo tiempo; si no, una API rechaza los tokens que la otra acepta.
-- El token no va cifrado, solo firmado: el `email`, el `rol` y el `clienteId` se pueden leer decodificándolo.
+- El token no va cifrado, solo firmado: el `rol` y el `clienteId` se pueden leer decodificándolo.

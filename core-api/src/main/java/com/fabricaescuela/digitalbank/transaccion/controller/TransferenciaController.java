@@ -7,6 +7,7 @@ import com.fabricaescuela.digitalbank.transaccion.interfaces.services.ITransfere
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +23,7 @@ public class TransferenciaController {
         this.transferenciaService = transferenciaService;
     }
 
+    @PreAuthorize("hasRole('CLIENTE')")
     @PostMapping("/{cuentaId}/transferencias")
     public ResponseEntity<TransferenciaResponse> transferir(@PathVariable UUID cuentaId,
                                                             @Valid @RequestBody TransferenciaRequest request,
