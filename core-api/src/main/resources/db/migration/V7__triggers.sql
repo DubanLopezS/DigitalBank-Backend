@@ -28,7 +28,6 @@ CREATE TRIGGER trg_transaccion_no_borrar
     BEFORE DELETE ON transaccion
     FOR EACH ROW EXECUTE FUNCTION fn_bloquear_borrado_transaccion();
 
--- 3. Una transacción solo puede pasar de COMPLETADA a REVERSADA y enlazarse a su reverso.
 -- 3. Una transacción solo puede pasar de COMPLETADA a REVERSADA, y solo en ese
 --    momento se enlaza a su reverso (que debe ser un REVERSO que la apunte a ella).
 CREATE FUNCTION fn_proteger_transaccion() RETURNS trigger AS $$
