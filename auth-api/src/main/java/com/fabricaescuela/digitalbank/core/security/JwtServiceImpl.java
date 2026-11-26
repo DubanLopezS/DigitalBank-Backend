@@ -33,7 +33,6 @@ public class JwtServiceImpl implements IJwtService {
 
         var builder = Jwts.builder()
                 .subject(usuario.getId().toString())
-                .claim("email", usuario.getEmail())
                 .claim("rol", usuario.getRol().name());
 
         if (usuario.getClienteId() != null) {

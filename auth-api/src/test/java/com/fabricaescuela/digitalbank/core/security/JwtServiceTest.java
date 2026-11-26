@@ -30,8 +30,8 @@ class JwtServiceTest {
     }
 
     @Test
-    @DisplayName("El token de un cliente lleva su id de usuario, correo, rol y clienteId")
-    void elTokenDeClienteLlevaSusDatos() {
+    @DisplayName("El token de un cliente lleva su id de usuario, rol y clienteId, pero no lleva el correo")
+    void elTokenDeClienteLlevaSusDatosSinElCorreo() {
         // Arrange
         UUID usuarioId = UUID.randomUUID();
         UUID clienteId = UUID.randomUUID();
@@ -43,7 +43,7 @@ class JwtServiceTest {
         // Assert
         Claims claims = jwtService.parseToken(token);
         assertThat(claims.getSubject()).isEqualTo(usuarioId.toString());
-        assertThat(claims.get("email", String.class)).isEqualTo("ana@banco.com");
+        assertThat(claims).doesNotContainKey("email");
         assertThat(claims.get("rol", String.class)).isEqualTo("CLIENTE");
         assertThat(jwtService.extraerUsuarioId(token)).isEqualTo(usuarioId);
         assertThat(jwtService.extraerRol(token)).isEqualTo("CLIENTE");

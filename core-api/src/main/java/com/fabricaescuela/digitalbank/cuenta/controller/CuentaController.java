@@ -7,6 +7,7 @@ import com.fabricaescuela.digitalbank.cuenta.interfaces.services.ICuentaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +23,7 @@ public class CuentaController {
         this.cuentaService = cuentaService;
     }
 
+    @PreAuthorize("hasRole('CLIENTE')")
     @PostMapping
     public ResponseEntity<CuentaResponse> abrirCuenta(
             @Valid @RequestBody AperturaCuentaRequest request,
