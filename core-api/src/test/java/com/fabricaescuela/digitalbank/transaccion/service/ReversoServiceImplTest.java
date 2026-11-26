@@ -13,6 +13,7 @@ import com.fabricaescuela.digitalbank.transaccion.entity.Transaccion;
 import com.fabricaescuela.digitalbank.transaccion.exception.TransaccionNoEncontradaException;
 import com.fabricaescuela.digitalbank.transaccion.exception.TransaccionNoReversableException;
 import com.fabricaescuela.digitalbank.transaccion.interfaces.repositories.ITransaccionRepository;
+import com.fabricaescuela.digitalbank.transaccion.interfaces.repositories.ResumenTransaccion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -71,7 +72,7 @@ class ReversoServiceImplTest {
     @DisplayName("Reversar un depósito debita la cuenta y deja la original en REVERSADA")
     void reversarDepositoDebitaYMarcaReversada() {
         Transaccion deposito = deposito(DEPOSITO_ID);
-        when(transaccionRepository.findById(DEPOSITO_ID)).thenReturn(Optional.of(deposito));
+        when(transaccionRepository.buscarResumen(DEPOSITO_ID)).thenReturn(Optional.of(resumen(deposito)));
         when(transaccionRepository.findByIdForUpdate(DEPOSITO_ID)).thenReturn(Optional.of(deposito));
         when(cuentaService.aplicarReverso(CUENTA_ID, MONTO, false))
                 .thenReturn(new MovimientoSaldoResponse(CUENTA_ID, new BigDecimal("100000.00"), new BigDecimal("70000.00")));
@@ -107,7 +108,7 @@ class ReversoServiceImplTest {
     @DisplayName("Reversar un retiro acredita la cuenta de vuelta")
     void reversarRetiroAcredita() {
         Transaccion retiro = retiro(RETIRO_ID);
-        when(transaccionRepository.findById(RETIRO_ID)).thenReturn(Optional.of(retiro));
+        when(transaccionRepository.buscarResumen(RETIRO_ID)).thenReturn(Optional.of(resumen(retiro)));
         when(transaccionRepository.findByIdForUpdate(RETIRO_ID)).thenReturn(Optional.of(retiro));
         when(cuentaService.aplicarReverso(CUENTA_ID, MONTO, true))
                 .thenReturn(new MovimientoSaldoResponse(CUENTA_ID, new BigDecimal("10000.00"), new BigDecimal("40000.00")));
@@ -131,7 +132,7 @@ class ReversoServiceImplTest {
     void reversarTransferenciaAjustaAmbasCuentas() {
         Transaccion salida = transferenciaLeg(SALIDA_ID, ORIGEN_ID, SentidoTransferencia.SALIENTE);
         Transaccion entrada = transferenciaLeg(ENTRADA_ID, DESTINO_ID, SentidoTransferencia.ENTRANTE);
-        when(transaccionRepository.findById(SALIDA_ID)).thenReturn(Optional.of(salida));
+        when(transaccionRepository.buscarResumen(SALIDA_ID)).thenReturn(Optional.of(resumen(salida)));
         when(transaccionRepository.findByTransferenciaIdForUpdate(TRANSFERENCIA_ID))
                 .thenReturn(List.of(salida, entrada));
         when(cuentaService.aplicarReverso(ORIGEN_ID, MONTO, true))
@@ -169,7 +170,7 @@ class ReversoServiceImplTest {
     @Test
     @DisplayName("Transacción inexistente responde 404 TRANSACCION_NO_ENCONTRADA")
     void transaccionInexistenteResponde404() {
-        when(transaccionRepository.findById(DEPOSITO_ID)).thenReturn(Optional.empty());
+        when(transaccionRepository.buscarResumen(DEPOSITO_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> reversoService.reversar(DEPOSITO_ID, request(), USUARIO_ID))
                 .isInstanceOfSatisfying(TransaccionNoEncontradaException.class, ex -> {
@@ -186,7 +187,7 @@ class ReversoServiceImplTest {
         Transaccion reverso = Transaccion.reverso(CUENTA_ID, MONTO, BigDecimal.ZERO, BigDecimal.ZERO,
                 SentidoTransferencia.SALIENTE, null, DEPOSITO_ID, USUARIO_ID, MOTIVO);
         ReflectionTestUtils.setField(reverso, "id", UUID.randomUUID());
-        when(transaccionRepository.findById(reverso.getId())).thenReturn(Optional.of(reverso));
+        when(transaccionRepository.buscarResumen(reverso.getId())).thenReturn(Optional.of(resumen(reverso)));
 
         assertThatThrownBy(() -> reversoService.reversar(reverso.getId(), request(), USUARIO_ID))
                 .isInstanceOfSatisfying(TransaccionNoReversableException.class, ex ->
@@ -200,7 +201,7 @@ class ReversoServiceImplTest {
     void depositoYaReversadoResponde409() {
         Transaccion deposito = deposito(DEPOSITO_ID);
         deposito.marcarReversada(UUID.randomUUID());
-        when(transaccionRepository.findById(DEPOSITO_ID)).thenReturn(Optional.of(deposito));
+        when(transaccionRepository.buscarResumen(DEPOSITO_ID)).thenReturn(Optional.of(resumen(deposito)));
         when(transaccionRepository.findByIdForUpdate(DEPOSITO_ID)).thenReturn(Optional.of(deposito));
 
         assertThatThrownBy(() -> reversoService.reversar(DEPOSITO_ID, request(), USUARIO_ID))
@@ -218,7 +219,7 @@ class ReversoServiceImplTest {
         Transaccion entrada = transferenciaLeg(ENTRADA_ID, DESTINO_ID, SentidoTransferencia.ENTRANTE);
         salida.marcarReversada(UUID.randomUUID());
         entrada.marcarReversada(UUID.randomUUID());
-        when(transaccionRepository.findById(SALIDA_ID)).thenReturn(Optional.of(salida));
+        when(transaccionRepository.buscarResumen(SALIDA_ID)).thenReturn(Optional.of(resumen(salida)));
         when(transaccionRepository.findByTransferenciaIdForUpdate(TRANSFERENCIA_ID))
                 .thenReturn(List.of(salida, entrada));
 
@@ -233,7 +234,7 @@ class ReversoServiceImplTest {
     @DisplayName("Si no hay saldo para reversar el depósito, la excepción se propaga y no se registra nada")
     void saldoInsuficienteSePropaga() {
         Transaccion deposito = deposito(DEPOSITO_ID);
-        when(transaccionRepository.findById(DEPOSITO_ID)).thenReturn(Optional.of(deposito));
+        when(transaccionRepository.buscarResumen(DEPOSITO_ID)).thenReturn(Optional.of(resumen(deposito)));
         when(transaccionRepository.findByIdForUpdate(DEPOSITO_ID)).thenReturn(Optional.of(deposito));
         when(cuentaService.aplicarReverso(CUENTA_ID, MONTO, false))
                 .thenThrow(new SaldoReversoInsuficienteException());
@@ -257,6 +258,10 @@ class ReversoServiceImplTest {
             }
             return t;
         });
+    }
+
+    private ResumenTransaccion resumen(Transaccion t) {
+        return new ResumenTransaccion(t.getTipo(), t.getTransferenciaId());
     }
 
     private Transaccion deposito(UUID id) {
