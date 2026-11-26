@@ -29,6 +29,8 @@ CREATE TRIGGER trg_transaccion_no_borrar
     FOR EACH ROW EXECUTE FUNCTION fn_bloquear_borrado_transaccion();
 
 -- 3. Una transacción solo puede pasar de COMPLETADA a REVERSADA y enlazarse a su reverso.
+-- 3. Una transacción solo puede pasar de COMPLETADA a REVERSADA, y solo en ese
+--    momento se enlaza a su reverso (que debe ser un REVERSO que la apunte a ella).
 CREATE FUNCTION fn_proteger_transaccion() RETURNS trigger AS $$
 BEGIN
     IF NEW.cuenta_id          IS DISTINCT FROM OLD.cuenta_id
@@ -47,8 +49,25 @@ BEGIN
     END IF;
 
     IF NEW.estado IS DISTINCT FROM OLD.estado
-    AND NOT (OLD.estado = 'COMPLETADA' AND NEW.estado = 'REVERSADA') THEN
+        AND NOT (OLD.estado = 'COMPLETADA' AND NEW.estado = 'REVERSADA') THEN
         RAISE EXCEPTION 'Cambio de estado no permitido: % a %', OLD.estado, NEW.estado;
+    END IF;
+
+    -- El enlace solo se asigna una vez, al pasar a REVERSADA.
+    IF NEW.transaccion_relacionada_id IS DISTINCT FROM OLD.transaccion_relacionada_id
+        AND NOT (OLD.estado = 'COMPLETADA' AND NEW.estado = 'REVERSADA'
+                AND OLD.transaccion_relacionada_id IS NULL) THEN
+        RAISE EXCEPTION 'El enlace con el reverso solo se asigna al pasar a REVERSADA';
+    END IF;
+
+    -- Al pasar a REVERSADA, el enlace debe apuntar al REVERSO que anula esta transacción.
+    IF OLD.estado = 'COMPLETADA' AND NEW.estado = 'REVERSADA'
+        AND NOT EXISTS (
+            SELECT 1 FROM transaccion r
+            WHERE r.id = NEW.transaccion_relacionada_id
+                AND r.tipo = 'REVERSO'
+                AND r.transaccion_relacionada_id = NEW.id) THEN
+        RAISE EXCEPTION 'La transacción solo puede pasar a REVERSADA enlazada a su REVERSO';
     END IF;
 
     RETURN NEW;
