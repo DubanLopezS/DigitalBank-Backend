@@ -160,6 +160,62 @@ class TriggersPostgresIntegrationTest extends IntegracionPostgresBase {
         assertThat(estadoDelDeposito()).isEqualTo("REVERSADA");
     }
 
+    @Test
+    @DisplayName("Una transacción COMPLETADA no se puede enlazar a otra sin pasar a REVERSADA")
+    void completadaNoSeEnlazaSinReversar() {
+        UUID otroDepositoId = insertarDeposito();
+
+        assertThatThrownBy(() -> ejecutar(
+                "UPDATE transaccion SET transaccion_relacionada_id = '%s' WHERE id = :depositoId".formatted(otroDepositoId)))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("El enlace con el reverso solo se asigna al pasar a REVERSADA");
+        assertThat(enlaceDelDeposito()).isNull();
+    }
+
+    @Test
+    @DisplayName("Una transacción REVERSADA no se puede enlazar a otra transacción")
+    void reversadaNoCambiaDeEnlace() {
+        reversarDeposito();
+        UUID reversoOriginal = enlaceDelDeposito();
+
+        assertThatThrownBy(() -> ejecutar("UPDATE transaccion SET transaccion_relacionada_id = id WHERE id = :depositoId"))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("El enlace con el reverso solo se asigna al pasar a REVERSADA");
+        assertThat(enlaceDelDeposito()).isEqualTo(reversoOriginal);
+    }
+
+    @Test
+    @DisplayName("Una transacción no pasa a REVERSADA apuntando a algo que no es un reverso")
+    void reversadaDebeApuntarAUnReverso() {
+        UUID otroDepositoId = insertarDeposito();
+
+        assertThatThrownBy(() -> marcarDepositoReversadoCon(otroDepositoId))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("La transacción solo puede pasar a REVERSADA enlazada a su REVERSO");
+        assertThat(estadoDelDeposito()).isEqualTo("COMPLETADA");
+    }
+
+    @Test
+    @DisplayName("Una transacción no pasa a REVERSADA apuntando al reverso de otra transacción")
+    void reversadaDebeApuntarASuPropioReverso() {
+        UUID otroDepositoId = insertarDeposito();
+        UUID reversoDelOtro = jdbc.sql("""
+                        INSERT INTO transaccion (cuenta_id, tipo, monto, saldo_anterior, saldo_nuevo, sentido,
+                                                 usuario_id, motivo, transaccion_relacionada_id)
+                        VALUES (:cuentaId, 'REVERSO', 100000, 200000, 100000, 'SALIENTE', :usuarioId, %s, :otroId)
+                        RETURNING id
+                        """.formatted(MOTIVO))
+                .params(parametros)
+                .param("otroId", otroDepositoId)
+                .query(UUID.class)
+                .single();
+
+        assertThatThrownBy(() -> marcarDepositoReversadoCon(reversoDelOtro))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("La transacción solo puede pasar a REVERSADA enlazada a su REVERSO");
+        assertThat(estadoDelDeposito()).isEqualTo("COMPLETADA");
+    }
+
     // ---- 4. Un cliente INACTIVO no recibe cuentas nuevas (HU-04) ----
 
     @Test
@@ -190,6 +246,27 @@ class TriggersPostgresIntegrationTest extends IntegracionPostgresBase {
                 UPDATE transaccion SET estado = 'REVERSADA', transaccion_relacionada_id = (SELECT id FROM reverso)
                 WHERE id = :depositoId
                 """.formatted(MOTIVO));
+    }
+
+    private UUID insertarDeposito() {
+        return jdbc.sql("""
+                        INSERT INTO transaccion (cuenta_id, tipo, monto, saldo_anterior, saldo_nuevo, origen, descripcion)
+                        VALUES (:cuentaId, 'DEPOSITO', 100000, 100000, 200000, 'EFECTIVO', 'Otro depósito')
+                        RETURNING id
+                        """)
+                .params(parametros)
+                .query(UUID.class)
+                .single();
+    }
+
+    private void marcarDepositoReversadoCon(UUID enlace) {
+        ejecutar("UPDATE transaccion SET estado = 'REVERSADA', transaccion_relacionada_id = '%s' WHERE id = :depositoId"
+                .formatted(enlace));
+    }
+
+    private UUID enlaceDelDeposito() {
+        return jdbc.sql("SELECT transaccion_relacionada_id FROM transaccion WHERE id = :id").param("id", depositoId)
+                .query(UUID.class).list().getFirst();
     }
 
     private String estadoDelDeposito() {
