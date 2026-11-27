@@ -6,6 +6,8 @@
 
 **Nota:** este ADR se escribió el 4 de noviembre de 2026, para cerrar el hallazgo HZ-11 de Calidad. El equipo decidió documentar las dos reglas tal como están implementadas.
 
+**Actualización:** el 27 de noviembre de 2026 se agregó a la Decisión 2 el riesgo de que un tercero bloquee el login de otra persona.
+
 ## Contexto
 
 Calidad reportó dos reglas sin definir en las historias de usuario de apertura de cuenta (HU-05) y de login (HU-18):
@@ -34,7 +36,7 @@ Calidad reportó dos reglas sin definir en las historias de usuario de apertura 
 
 **Alternativas que consideramos**
 
-- **Que los correos inexistentes también acumulen intentos y respondan el mismo 429**: cierra el hueco, pero requiere guardar intentos de correos que no existen (tabla nueva y migración V6). También permitiría que alguien llene esa tabla con correos inventados.
+- **Que los correos inexistentes también acumulen intentos y respondan el mismo 429**: cierra el hueco, pero requiere guardar intentos de correos que no existen (tabla nueva y una migración nueva). También permitiría que alguien llene esa tabla con correos inventados.
 - **Responder siempre el 401 genérico, incluso a un usuario bloqueado**: cierra el hueco con poco código, pero el usuario real bloqueado no sabe por qué no puede entrar y se incumple el mensaje que la HU-18 pide.
 - **Mantener el comportamiento (decisión tomada)**: cumple la HU tal como está escrita.
 
@@ -43,4 +45,5 @@ Calidad reportó dos reglas sin definir en las historias de usuario de apertura 
 **Qué implica**
 
 - A favor: el usuario real sabe que está bloqueado y por qué. No hay migración ni código nuevo.
-- En contra: se puede enumerar correos del banco. Lo reducen dos cosas: el bloqueo dura 1 hora y el atacante necesita al menos tres intentos fallidos por correo. Si se quiere cerrar el hueco más adelante, el camino es la primera alternativa, con la migración V6.
+- En contra: se puede enumerar correos del banco. Lo reducen dos cosas: el bloqueo dura 1 hora y el atacante necesita al menos tres intentos fallidos por correo. Si se quiere cerrar el hueco más adelante, el camino es la primera alternativa, con una migración nueva.
+- En contra: el contador de intentos está en la columna `intentos_fallidos` de la fila de `usuario` y no depende de quién intenta. `AuthServiceImpl` lo sube con cada clave incorrecta, venga de donde venga, y al tercer fallo `Usuario` pasa a BLOQUEADO_TEMPORAL por una hora. Así que cualquiera que conozca el correo de otra persona puede dejarle el login bloqueado por una hora con tres intentos fallidos, y repetirlo cada hora. Es una denegación de servicio contra un usuario: mientras dura el bloqueo, el dueño tampoco entra aunque ponga la clave correcta, porque el bloqueo se revisa antes que la clave. El contador solo vuelve a cero con un login exitoso o cuando vence el bloqueo, así que los tres fallos no tienen que ser seguidos. Los intentos durante el bloqueo no lo alargan. Hoy nada en el código lo impide; solo queda rastro en los logs con los eventos `LOGIN_FALLIDO`, que trae el `usuarioId` y el número de intentos, `USUARIO_BLOQUEADO_TEMPORAL` y `LOGIN_RECHAZADO_USUARIO_BLOQUEADO`. Con eso se puede ver que a un usuario lo están bloqueando, pero no desde dónde, porque los eventos no guardan la IP. Si se quiere cerrar, el camino es contar intentos por IP o por dispositivo además de por usuario, o pedir un captcha después de los fallos.
