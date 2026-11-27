@@ -15,11 +15,11 @@
 --
 -- Cuándo no usarlo:
 --   En la base que usa core-api. Allí la estructura la crea Flyway
---   con V1 a V6. core-api tiene spring.flyway.baseline-on-migrate=true,
+--   con V1 a V7. core-api tiene spring.flyway.baseline-on-migrate=true,
 --   así que si encuentra tablas sin historial de Flyway marca la base
---   en la versión 1 y luego intenta aplicar V2 a V6 sobre tablas que
+--   en la versión 1 y luego intenta aplicar V2 a V7 sobre tablas que
 --   ya las tienen, y falla. Cualquier cambio de estructura sigue
---   entrando como una migración nueva (V7, ...), y este script se
+--   entrando como una migración nueva (V8, ...), y este script se
 --   actualiza después para reflejarla.
 --
 -- Ejecución:

@@ -56,4 +56,4 @@ Esto cambia una regla del entregable de Bases de Datos, que dice que las transac
 - En contra: `auth-api` ahora conoce la tabla `cuenta` y `core-api` puede cambiar el estado de un cliente. Son acoplamientos nuevos entre APIs, como el que ya aceptó el ADR-0009 cuando `core-api` empezó a leer clientes.
 - En contra: el resumen de cuentas queda escrito en dos APIs, en la HU-02 y en la HU-08.
 - En contra: las transacciones dejan de ser totalmente inmutables, aunque solo en dos columnas.
-- Pendiente: hay que actualizar `04-roles-seguridad.sql` y `05-prueba-permisos.sql` del entregable de Bases de Datos con estos permisos y sus políticas, porque esos scripts no están en este repositorio.
+- El 27 de noviembre de 2026 se actualizaron `04-roles-seguridad.sql` y `05-prueba-permisos.sql` del entregable de Bases de Datos con estos permisos y sus políticas, y quedaron en `docs/scripts` junto con `02-datos-prueba.sql`.
